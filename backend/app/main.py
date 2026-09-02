@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# Add root repository directory to sys.path for perception & API modules
+repo_root = str(Path(__file__).resolve().parent.parent.parent)
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
@@ -57,6 +65,15 @@ async def health():
     return {"status": "ok", "service": "nhaa-case-api"}
 
 
+@app.get("/upload-test")
+async def upload_test():
+    try:
+        from api.routes.perception_routes import upload_test_page
+        return await upload_test_page()
+    except Exception as e:
+        return {"error": f"Upload test page unavailable: {e}"}
+
+
 @app.get("/")
 async def root():
-    return {"service": "NHAA Central Case API", "docs": "/docs"}
+    return {"service": "NHAA Central Case API", "docs": "/docs", "upload_test": "/upload-test"}
