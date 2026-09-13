@@ -1,215 +1,150 @@
-# NHAA & DOSJE Portal 2026 🇮🇳
-
-A pixel-perfect, accessible, and responsive multi-page web application replicating the **Ministry of Social Justice & Empowerment (DOSJE)** and the **National Helpline Against Atrocities (NHAA - NHAPOA)** official portals.
-
----
-
-## 🏛️ Features
-
-- **Department of Social Justice & Empowerment (DOSJE) Home**:
-  - Full-width hero carousel with official Ministry campaign banners.
-  - Interactive **Associated Organisations 3-Column Mega Menu** (`COMMISSIONS`, `CORPORATIONS`, `FOUNDATION / AUTONOMOUS BODIES`, `SCHEME SPECIFIC THEMATIC PORTALS`).
-  - Real-time statistics banner for Cumulative Disbursements, Beneficiary Coverage, and FY Releases.
-  - Explore User Personas slider (`Beneficiary` & `Government Official`).
-  - Dynamic **Our Offerings** catalog (`Schemes`, `Vacancies`, `Tenders`).
-  - Vivid Blue Footer with NeGD, Digital India Corporation, and official Samavesh Sahayak assistant widget.
-
-- **NHAA / NHAPOA Portal (`/nhaa`)**:
-  - Toll-Free 24x7 Helpline **14566** for PCR Act 1955 & SC/ST PoA Act 1989.
-  - Interactive Action Modules: **Register Grievance**, **Register Rescue**, **Track Status**.
-  - 5-Stage **Grievance Closure Process** workflow tracker.
-  - SAMBAL 2021 navigation sidebar.
-
-- **SAMAVESH Citizen Portals (`/samavesh`)**:
-  - Dedicated access mechanism for SCW, SMILE Transgender, NOS, NMBA, and NHAA.
-
-- **Comprehensive Subpages**:
-  - **Schemes & Services (`/schemes`)**: Filterable scheme catalog with keyword search and application guidelines.
-  - **About Us (`/about-us`)**: Vision, Mission, and Leadership portraits.
-  - **Vacancies (`/vacancies`)** & **Tenders (`/tenders`)**: Recruitment circulars and procurement notices.
-  - **Contact Us (`/contact-us`)**: Headquarters directory, national helplines, and public grievance form.
+# 🇮🇳 NHAA 14566 — AI-Powered Stress & Trauma Assessment Portal
+### Problem Statement 14566: AI-Based Real-Time Stress and Trauma Assessment Module for Victims/Complainants Accessing NHAA (14566) and Integrated Portal
+**Ministry of Social Justice & Empowerment (DOSJE) — SIH 2026**
 
 ---
 
-## 🚀 Tech Stack
+## 🌟 Executive Summary
+An end-to-end mission-critical digital ecosystem replicating the **Department of Social Justice & Empowerment (DOSJE)** citizen portal and elevating the **National Helpline Against Atrocities (NHAA - 14566)** with an **AI-driven Real-Time Stress & Trauma Assessment Engine**.
 
-- **React 19** + **Vite**
-- **React Router DOM v7**
-- **Tailwind CSS v4** + Custom UX4G Design System
-- **Lucide Icons** & Vector SVGs
-
----
-
-## 🏗️ Project Architecture
-
-This project is split into three layers:
-
-### 1. Frontend - Public Portal (React + Vite)
-The citizen-facing DOSJE/NHAA portal clone (existing, already built).
-
-### 2. Backend - Case API (FastAPI)
-Located in `backend/`. The single shared PostgreSQL-backed API that every
-channel (Portal, Chatbot, IVRS, Mobile App) writes to and reads from.
-
-**Endpoints:**
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/cases/` | Create a case (any channel) |
-| `GET`  | `/api/cases/` | List cases (role-filtered) |
-| `GET`  | `/api/cases/{id}` | Full case detail + risk assessments |
-| `PATCH` | `/api/cases/{id}` | Update case status |
-| `POST` | `/api/risk-assessments/` | AI module posts SVI score + risk tier |
-| `GET`  | `/api/risk-assessments/case/{id}` | Get all risk assessments for a case |
-| `GET`  | `/api/stats/cases` | Aggregate stats (for State/Ministry dashboards) |
-| `GET`  | `/api/stats/trend` | Weekly trend (cases + avg SVI) |
-| `GET`  | `/api/stats/districts` | District comparison table |
-| `GET`  | `/api/stats/states` | State-by-state comparison |
-| `GET`  | `/docs` | Swagger UI (automatic OpenAPI docs) |
-| `GET`  | `/ws` | WebSocket for real-time events |
-
-**Database tables (7):** `cases`, `victims`, `risk_assessments`, `officers`,
-`notifications`, `audit_logs`, `sla_deadlines`
-
-### 3. Admin Panel (React - Vinit's screens)
-- `/admin/district` - Case queue sorted by risk tier, with SLACountdown + Escalate button
-- `/admin/state` - Aggregate stats, trend charts, district comparison table
-- `/admin/ministry` - National overview, state-by-state comparison, trend charts
-
-**Reusable components:** `RiskBadge`, `SLACountdown`, `StatsCard`, `TrendChart`,
-`StateComparisonTable`, `AdminLayout`
+The system replaces legacy, flat chronological complaint lists with dynamic, clinical AI triage:
+- Detects **acoustic voice tremors, pitch variability, hesitation markers, and silent distress signals**.
+- Computes an objective **Stress & Vulnerability Index (SVI)** on a scale of 0 to 100.
+- Triggers instant **multi-tier police emergency escalation** (Rule 7 PoA Act compliance) and **inter-agency victim compensation workflows (SWO/DBT)**.
 
 ---
 
-## 🚀 Getting Started
+## 🏛️ Core Features
 
-### Frontend
+### 1. Citizen & Victim Ingestion Layer (`/nhaa`)
+- **Toll-Free 24x7 Helpline 14566**: Integration for PCR Act 1955 & SC/ST (PoA) Act 1989.
+- **Multimodal Ingestion**: Supports Web Portal, IVRS Phone Call (Twilio), and WhatsApp.
+- **Silent Distress Signal Detection**: Enables victims in immediate danger to trigger silent alerts without speaking.
+- **Multilingual Support**: Real-time localized interfaces (English, Hindi, Marathi).
+
+### 2. AI Real-Time Stress & Trauma Assessment Module
+- **Acoustic & Linguistic Diagnostics**: 
+  - Voice tremor & pitch analysis (Trauma detection).
+  - Pauses, cadence, and whisper detection (Fear & panic detection).
+  - Coercion, threats, and armed extortion markers (Intimidation detection).
+- **Explainable SVI Score (0 - 100)** with 4 Clinical Risk Tiers:
+  - 🔴 **Critical** (SVI ≥ 85) — Immediate emergency police dispatch.
+  - 🟠 **High** (SVI 65–84) — Priority legal aid & district review.
+  - 🟡 **Moderate** (SVI 40–64) — Standard inquiry & officer assignment.
+  - 🟢 **Low** (SVI < 40) — Information / advisory.
+- **PoA Act Statutory Mapping**: Automatically recommends relevant legal sections under SC/ST (PoA) Act & Bharatiya Nyaya Sanhita (BNS).
+
+### 3. Multi-Tier Administrative Command Hierarchy
+- **Operator Command Center (`/admin/operator`)**: Real-time triage inbox sorted dynamically by SVI score.
+- **Investigating Officer (`/admin/io`)**: Case diary, spot inspection reports, and evidence locker.
+- **District DSP (`/admin/dsp` / `/admin/district`)**: Fast-track FIR generation, Rule 7 60-day investigation timer.
+- **ACP / SP (`/admin/acp` / `/admin/sp`)**: Inter-district supervisory controls and resource allocation.
+- **State & Ministry (`/admin/state` / `/admin/ministry`)**: Macro analytics, district comparison, and heatmaps.
+- **Social Welfare Officer (`/admin/swo`)**: Statutory victim relief and DBT compensation tracking.
+- **Special Judiciary (`/admin/judiciary`)**: Special Court fast-track trial oversight.
+
+---
+
+## 🏗️ Cloud & Deployment Architecture
+
+```
+[ Citizen Ingestion ] ──────> [ Frontend on Vercel ]
+(Web / IVRS / WhatsApp)       (React 19 + Vite + HashRouter)
+                                      │
+                                      ▼ HTTPS / WSS
+[ Backend on Render ] ──────> [ PostgreSQL on Supabase ]
+(FastAPI + JWT Auth + Async)   (9 Relational Tables + Alembic)
+        │
+        ▼ AI Pipeline
+[ Groq Cloud / OpenRouter ] (Llama-3-70B / Whisper / NER / Trauma Analysis)
+```
+
+- **Frontend:** Hosted on **Vercel** (with GitHub Pages fallback).
+- **Backend API:** Hosted on **Render** (FastAPI with Uvicorn).
+- **Database:** Managed **PostgreSQL on Supabase** with Alembic migrations.
+- **Real-Time Push:** WebSockets for live zero-delay case updates across officer dashboards.
+
+---
+
+## 🚀 Deployment & CI/CD Setup
+
+### Frontend Deployment (Vercel)
+1. Import repository into **Vercel**.
+2. **Framework Preset:** `Vite`.
+3. **Build Command:** `npm run build`
+4. **Output Directory:** `dist`
+5. **Environment Variable:**
+   ```env
+   VITE_API_URL=https://<your-backend-app>.onrender.com
+   ```
+   *(Note: No trailing slash)*
+
+### Backend Deployment (Render)
+1. Create a **Web Service** on **Render** connected to this repository (`backend/` directory as Root).
+2. **Environment:** `Python 3`
+3. **Build Command:** `pip install -r requirements.txt`
+4. **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. **Environment Variables:**
+   ```env
+   DATABASE_URL=postgresql+asyncpg://<user>:<password>@<supabase-host>:5432/<database>
+   SECRET_KEY=<your-jwt-secret>
+   GROQ_API_KEY=<your-groq-api-key>
+   OPENROUTER_API_KEY=<your-openrouter-api-key>
+   ```
+
+---
+
+## 🔑 Demo & Testing Credentials
+
+The application supports both live database authentication and offline fallback:
+
+| Role | Username | Default Password | Jurisdictional Scope |
+|:---|:---|:---|:---|
+| **Operator** | `operator` | `Test@1234` | Pune District / NHAA Central |
+| **Investigating Officer** | `io` | `Test@1234` | Chatuhshrungi Police Station |
+| **DSP (District Police)** | `dsp` | `Test@1234` | Pune District Rural/City |
+| **SP (Superintendent)** | `sp` | `Test@1234` | Pune Rural / Maharashtra |
+| **IG (Inspector General)** | `ig` | `Test@1234` | Maharashtra State |
+| **Social Welfare Officer** | `swo` | `Test@1234` | Pune Social Welfare Dept |
+| **Special Court Judge** | `judiciary` | `Test@1234` | District & Sessions Court |
+| **System Admin** | `sysadmin` | `Admin@1234` | System Configuration |
+
+*(Alternate accepted passwords for testing: `demo123`)*
+
+---
+
+## 📹 Presentation & Video Recording
+For the official video presentation guidelines and word-for-word screen narration:
+👉 **[See DEMO_VIDEO_SCRIPT.md](./DEMO_VIDEO_SCRIPT.md)**
+
+---
+
+## 🧪 Local Development
+
+### 1. Frontend
 ```bash
 npm install
 npm run dev
 ```
-Open [http://localhost:5173](http://localhost:5173)
+Runs at `http://localhost:5173/`
 
-### Backend
+### 2. Backend
 ```bash
-cd backend
-# Windows:
-run.bat start
-# Or manually:
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-API docs at [http://localhost:8000/docs](http://localhost:8000/docs)
-
-### Running the synchronization test
-```bash
-cd backend
-run.bat test
-# Or:
-python -m pytest tests/test_sync.py -v -s
-```
-
-### Supabase integration
-See [`.kilo/command/supabase-mcp.md`](.kilo/command/supabase-mcp.md) for MCP
-server setup instructions. The backend connects to Supabase PostgreSQL via
-the `DATABASE_URL` environment variable in `backend/.env`.
-
----
-
-## 🔐 Supabase Connection
-
-1. **Add MCP server:**
-   ```bash
-   claude mcp add --scope project --transport http supabase "https://mcp.supabase.com/mcp?project_ref=muzemjdlrxuewvcdwxpm&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-   ```
-
-2. **Authenticate:**
-   ```bash
-   claude /mcp
-   ```
-
-3. **Set env vars** (`backend/.env`):
-   ```
-   DATABASE_URL=postgresql+asyncpg://postgres:<password>@db.muzemjdlrxuewvcdwxpm.supabase.co:5432/postgres
-   ```
-
-4. **Run migrations** (when switching to Supabase):
-   ```bash
-   python -m alembic upgrade head
-   ```
-
----
-
-## 🧪 Tests
-
-The synchronization test (`backend/tests/test_sync.py`) validates:
-
-1. **4 simulated channel POSTs** (Portal, Chatbot, IVRS, Mobile App)
-2. **All 4 show up** in a single `GET /cases` call
-3. **All 4 trigger WebSocket push** events within 1-2 seconds
-4. **Role-based filtering** blocks district officer from other districts
-5. **AI risk assessment** links score to case + pushes WS event
-6. **PATCH updates** trigger WS events
-7. **Audit log** captures every action (append-only)
-8. **End-to-end pipeline**: Portal case -> AI assessment -> status update -> audit trail
-
----
-
-## 📡 Data Contract
-
-See [`backend/docs/data_contract.md`](backend/docs/data_contract.md) for field shapes needed by each screen/endpoint.
-
----
-
-## 🚀 How to Run
-
-### 1. Install dependencies (once):
-```bash
-npm install
 cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-### 2. Database setup:
-```bash
-# Copy template and fill in Supabase credentials
-cp backend/.env.example backend/.env
-# Note: URL-encode @ as %40 in your Supabase password
-cd backend
-.venv\Scripts\activate
-python -m alembic upgrade head
-```
-
-### 3. Start servers:
-```bash
-# Terminal 1 - Backend (port 8000)
-cd backend
-.venv\Scripts\activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# Terminal 2 - Frontend (port 5174)
-cd D:\sih2026\dosje-clone
-npm run dev
-```
-
-### 4. Run tests:
-```bash
-cd backend
-.venv\Scripts\activate
-python -m pytest tests/test_sync.py -v -s
-```
-
-### Access your admin screens:
-- `http://localhost:5174/nhaa_2026/#/admin/district`
-- `http://localhost:5174/nhaa_2026/#/admin/state`
-- `http://localhost:5174/nhaa_2026/#/admin/ministry`
-
-### API docs:
-- `http://localhost:8000/docs`
+Interactive API Swagger: `http://localhost:8000/docs`
 
 ---
 
-Content and design inspired by Department of Social Justice & Empowerment, Ministry of Social Justice & Empowerment, Government of India.
+## ⚖️ Statutory Compliance & Acts
+- **Protection of Civil Rights (PCR) Act, 1955**
+- **Scheduled Castes and Scheduled Tribes (Prevention of Atrocities) Act, 1989 & Rules, 1995**
+- **PoA Amendment Act, 2015 & Amendment Rules, 2016**
+- **Bharatiya Nyaya Sanhita (BNS), 2023**
+
+---
+*Built with dedication for Smart India Hackathon (SIH 2026).*
