@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { ASSETS } from '../assets';
+import GrievanceRegistrationWizard from '../components/GrievanceRegistrationWizard';
 
 // ─── Custom SVG Icons matching the screenshot precisely ───
 const GridDashboardIcon = ({ color = '#003366' }) => (
@@ -82,7 +83,32 @@ const ContrastIcon = () => (
 );
 
 export default function NhaaPage() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const search = window.location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+      const params = new URLSearchParams(search);
+      if (params.get('tab') === 'grievance' || window.location.hash.includes('#grievance')) {
+        return 'grievance';
+      }
+    } catch {
+      // fallback
+    }
+    return 'dashboard';
+  });
+
+  useEffect(() => {
+    try {
+      const search = location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+      const params = new URLSearchParams(search);
+      if (params.get('tab') === 'grievance' || window.location.hash.includes('#grievance')) {
+        setActiveTab('grievance');
+      }
+    } catch {
+      // fallback
+    }
+  }, [location]);
+
   const [activeModal, setActiveModal] = useState(null);
   const [bannerVisible, setBannerVisible] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -335,10 +361,10 @@ export default function NhaaPage() {
                       letterSpacing: 0.5,
                     }}
                   >
-                    BETA
+                    SIH 2026 PROTOTYPE
                   </span>
                   <span style={{ fontSize: '11px', color: highContrast ? '#ccc' : '#64748B', fontWeight: 500 }}>
-                    Government of India
+                    Academic &amp; Evaluation Model
                   </span>
                 </div>
                 <div style={{ fontSize: '12px', fontWeight: 600, color: highContrast ? '#ddd' : '#334155', lineHeight: 1.2 }}>
@@ -405,65 +431,6 @@ export default function NhaaPage() {
           </div>
         </div>
       </header>
-
-      {/* ─── 3. ORANGE ANNOUNCEMENT BANNER ─────────────────────────── */}
-      {bannerVisible && (
-        <div
-          style={{
-            background: '#F95700',
-            color: '#FFFFFF',
-            padding: '11px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '13.5px',
-            fontWeight: 500,
-            boxShadow: '0 2px 6px rgba(249,87,0,0.15)',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1440,
-              margin: '0 auto',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: '#FFFFFF',
-                  display: 'inline-block',
-                  boxShadow: '0 0 8px rgba(255,255,255,0.8)',
-                }}
-              />
-              <span>
-                National Helpline Against Atrocities is now <strong>SAMBAL (संबल)</strong> — same team, same number.
-              </span>
-            </div>
-            <button
-              onClick={() => setBannerVisible(false)}
-              title="Dismiss banner"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#FFFFFF',
-                fontSize: '16px',
-                cursor: 'pointer',
-                padding: '0 4px',
-                lineHeight: 1,
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ─── 4. MAIN PORTAL BODY (SIDEBAR + CONTENT) ───────────────── */}
       <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
@@ -572,7 +539,10 @@ export default function NhaaPage() {
 
             {/* Register Grievance */}
             <button
-              onClick={() => setActiveModal('grievance')}
+              onClick={() => {
+                setActiveTab('grievance');
+                setActiveModal(null);
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -580,20 +550,34 @@ export default function NhaaPage() {
                 padding: '11px 14px',
                 borderRadius: 8,
                 border: 'none',
-                background: 'transparent',
-                color: highContrast ? '#ccc' : '#475569',
-                fontWeight: 500,
+                background: activeTab === 'grievance' ? '#EBF3FE' : 'transparent',
+                color: activeTab === 'grievance' ? '#003366' : highContrast ? '#ccc' : '#475569',
+                fontWeight: activeTab === 'grievance' ? 700 : 500,
                 fontSize: '13.5px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
                 transition: 'all 0.15s',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              onMouseEnter={(e) => {
+                if (activeTab !== 'grievance') e.currentTarget.style.background = '#F8FAFC';
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== 'grievance') e.currentTarget.style.background = 'transparent';
+              }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20 }}>
-                <DocPencilIcon size={20} color="#475569" />
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 6,
+                  background: (!sidebarOpen && activeTab === 'grievance') ? '#DBEAFE' : 'transparent',
+                }}
+              >
+                <DocPencilIcon size={20} color={activeTab === 'grievance' ? '#003366' : '#475569'} />
               </span>
               {sidebarOpen && <span>Register Grievance</span>}
             </button>
@@ -705,10 +689,30 @@ export default function NhaaPage() {
           id="portal-main-content"
           style={{
             flex: 1,
-            padding: '36px 48px 60px',
-            background: highContrast ? '#0A0A0A' : '#FFFFFF',
+            padding: activeTab === 'grievance' ? '28px 36px 60px' : '36px 48px 60px',
+            background: highContrast ? '#0A0A0A' : '#F8FAFC',
           }}
         >
+          {activeTab === 'grievance' ? (
+            <GrievanceRegistrationWizard
+              highContrast={highContrast}
+              onCancel={() => setActiveTab('dashboard')}
+              onNavigateTrack={(refId) => {
+                setTrackId(refId);
+                setStatusResult({
+                  id: refId,
+                  status: 'Case Registered & Assigned',
+                  stage: 'Step 1: Dispatched to District SP & DSP Atrocities Cell for verification',
+                  updated: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                  officer: 'DSP / Nodal Officer, Atrocities Cell',
+                  firNumber: 'FIR/309/2026/SC-ST-POA',
+                  reliefAmount: '₹4,25,000 (Sanction in Progress)',
+                });
+                setActiveTab('dashboard');
+                setActiveModal('track');
+              }}
+            />
+          ) : (
           <div style={{ maxWidth: 1220, margin: '0 auto' }}>
             
             {/* Title & Subtitle Header */}
@@ -787,7 +791,7 @@ export default function NhaaPage() {
                   Submit a new complaint regarding atrocities. You can register as a Victim, Informer, or on behalf of an NGO.
                 </p>
                 <button
-                  onClick={() => setActiveModal('grievance')}
+                  onClick={() => setActiveTab('grievance')}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -1035,8 +1039,30 @@ export default function NhaaPage() {
             </div>
 
           </div>
+          )}
         </main>
       </div>
+
+      {/* Academic Prototype Disclaimer Bar */}
+      <footer
+        style={{
+          background: highContrast ? '#111' : '#001A33',
+          color: '#94A3B8',
+          fontSize: '11px',
+          padding: '12px 24px',
+          textAlign: 'center',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        <div style={{ maxWidth: 1220, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+          <div style={{ color: '#FCD34D', fontWeight: 600 }}>
+            ⚠️ Academic &amp; Evaluation Disclaimer: This portal is a working prototype created exclusively for Smart India Hackathon (SIH 2026) Problem Statement 14566.
+          </div>
+          <div>
+            It is designed strictly for technical demonstration, research, and jury evaluation and is NOT an official government website.
+          </div>
+        </div>
+      </footer>
 
       {/* ─── 5. FLOATING ASSISTANT WIDGET (BOTTOM-RIGHT) ───────────── */}
       <div
@@ -1116,7 +1142,7 @@ export default function NhaaPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
               <button
-                onClick={() => { setActiveModal('grievance'); setChatbotOpen(false); }}
+                onClick={() => { setActiveTab('grievance'); setChatbotOpen(false); }}
                 style={{ background: '#EEF2FF', color: '#003366', border: '1px solid #C7D7FD', padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
               >
                 📝 How do I register a grievance?

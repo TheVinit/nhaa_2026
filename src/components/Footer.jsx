@@ -211,31 +211,43 @@ const Footer = () => {
         </div>
       </div>
 
+      {/* SIH 2026 Academic Disclaimer Bar */}
+      <div className="bg-[#00081a] border-t border-amber-500/30 px-4 py-3 text-center">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 text-[11px] text-amber-300">
+          <span className="font-bold bg-amber-500/20 text-amber-200 px-2 py-0.5 rounded border border-amber-500/40 uppercase tracking-wider text-[10px]">
+            Academic Prototype Disclaimer
+          </span>
+          <span>
+            This portal is an educational prototype developed exclusively for <strong>Smart India Hackathon (SIH 2026) Problem Statement 14566 (NHAA - DoSJE)</strong>. It is created solely for technical demonstration and evaluation purposes and is not an official government website.
+          </span>
+        </div>
+      </div>
+
       {/* Bottom legal bar */}
       <div className="bg-[#000f2e] border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="text-[10px] text-blue-400 text-center md:text-left">
               <p>
-                Designed, Developed &amp; Maintained by{' '}
-                <a href="https://dic.gov.in/" target="_blank" rel="noreferrer" className="text-blue-300 hover:text-white font-semibold transition-colors">
-                  Digital India Corporation
-                </a>
-                , Ministry of Electronics &amp; IT (MeitY), Government of India
+                Designed, Developed &amp; Maintained for{' '}
+                <span className="text-blue-200 font-semibold">
+                  Smart India Hackathon (SIH 2026) Prototype Demonstration
+                </span>
+                {' '}| Ministry of Social Justice &amp; Empowerment (DoSJE) Reference Model
               </p>
               <p className="mt-0.5">
-                Contents owned and managed by Department of Social Justice and Empowerment, Ministry of Social Justice and Empowerment, GOI
+                All department logos and trademarks are property of their respective government bodies and used strictly under educational fair-use principles.
               </p>
             </div>
             <div className="flex items-center gap-3 flex-wrap justify-center">
               {[
-                { label: 'Copyright Policy', href: 'https://www.dosje.gov.in/home-page/copyright-policy/' },
-                { label: 'Hyperlinking Policy', href: 'https://www.dosje.gov.in/home-page/hyperlinking-policy/' },
-                { label: 'Help', href: 'https://www.dosje.gov.in/home-page/help/' },
-                { label: 'Terms & Conditions', href: 'https://www.dosje.gov.in/terms-conditions' },
+                { label: 'SIH 2026 PS-14566', href: '#/nhaa' },
+                { label: 'NHAA 14566 Portal', href: '#/nhaa' },
+                { label: 'Admin Command Center', href: '#/admin/login' },
+                { label: 'Copyright & Fair Use', href: 'https://www.dosje.gov.in/home-page/copyright-policy/' },
                 { label: 'Privacy Policy', href: 'https://www.dosje.gov.in/home-page/privacy-policy/' },
               ].map(({ label, href }) => (
-                <a key={label} href={href} target="_blank" rel="noreferrer" className="text-[10px] text-blue-400 hover:text-white transition-colors">
+                <a key={label} href={href} target={href.startsWith('http') ? '_blank' : '_self'} rel="noreferrer" className="text-[10px] text-blue-400 hover:text-white transition-colors">
                   {label}
                 </a>
               ))}

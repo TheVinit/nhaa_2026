@@ -25,6 +25,7 @@ import OperatorScreen from './pages/admin/OperatorScreen';
 import ResponderScreen from './pages/admin/ResponderScreen';
 import AdminLayout from './components/admin/AdminLayout';
 import RequireRole from './components/admin/RequireRole';
+import DisclaimerBanner from './components/DisclaimerBanner';
 import { LangProvider } from './i18n/LangContext';
 
 const AdminShell = ({ children }) => (
@@ -1790,6 +1791,7 @@ function AppContent() {
 
   return (
     <>
+      <DisclaimerBanner />
       {showPublicHeader && (
         <>
           <TopBar />

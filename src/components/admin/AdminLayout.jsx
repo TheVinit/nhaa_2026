@@ -141,7 +141,7 @@ export default function AdminLayout({ children }) {
     <div style={{
       background: '#F8FAFC',
       color: '#0F172A',
-      fontFamily: "'Noto Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       WebkitFontSmoothing: 'antialiased',
       MozOsxFontSmoothing: 'grayscale',
       minHeight: '100vh',
