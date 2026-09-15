@@ -1,31 +1,34 @@
 /**
- * Desk Clearance Scope — NHAA RBAC Hierarchy
+ * Desk Clearance Scope — NHAA RBAC Hierarchy & Strict Compartmentalization
  *
- * Each role maps to the set of admin route prefixes it is allowed to visit.
- * Higher roles include all lower desks they supervise.
+ * Each officer role is strictly restricted to their designated desk.
+ * An officer logged in as DSP can NEVER access Operator, IO, or SP desks.
+ * ONLY the System Administrator (sysadmin / super_admin) has full cross-tier access.
  *
- * L-0    operator  → operator desk only
- * L-0.5  io        → io desk only
- * L-1    dsp/acp   → dsp, acp, io, operator
- * L-2    sp        → sp + all L-1 and below
- * L-3    ig        → ig + all L-2 and below
- * L-3+   director  → director + all police desks
- * L-4    judiciary → judiciary only (independent legal authority)
- * L-5    swo       → swo only (welfare desk, independent)
- * SYSTEM sysadmin  → ALL routes
+ * L-0    operator    → operator desk only
+ * L-0.5  io          → io desk only
+ * L-1    dsp         → dsp / district desk only
+ * L-1    acp         → acp desk only
+ * L-2    sp          → sp / state desk only
+ * L-3    ig          → ig / ministry desk only
+ * L-3+   director    → director desk only
+ * L-4    judiciary   → judiciary desk only
+ * L-5    swo         → swo desk only
+ * SYSTEM sysadmin    → ALL desks (wildcard '*')
  */
 
 export const ROLE_CLEARANCE = {
-  operator:  ['/admin/operator'],
-  io:        ['/admin/io'],
-  dsp:       ['/admin/dsp', '/admin/io', '/admin/operator'],
-  acp:       ['/admin/acp', '/admin/dsp', '/admin/io', '/admin/operator'],
-  sp:        ['/admin/sp', '/admin/acp', '/admin/dsp', '/admin/io', '/admin/operator'],
-  ig:        ['/admin/ig', '/admin/sp', '/admin/acp', '/admin/dsp', '/admin/io', '/admin/operator'],
-  director:  ['/admin/director', '/admin/ig', '/admin/sp', '/admin/acp', '/admin/dsp', '/admin/io', '/admin/operator'],
-  judiciary: ['/admin/judiciary'],
-  swo:       ['/admin/swo'],
-  sysadmin:  ['*'], // wildcard — all routes
+  operator:    ['/admin/operator'],
+  io:          ['/admin/io'],
+  dsp:         ['/admin/dsp', '/admin/district'],
+  acp:         ['/admin/acp'],
+  sp:          ['/admin/sp', '/admin/state'],
+  ig:          ['/admin/ig', '/admin/ministry'],
+  director:    ['/admin/director'],
+  judiciary:   ['/admin/judiciary'],
+  swo:         ['/admin/swo'],
+  sysadmin:    ['*'], // wildcard — full cross-tier access
+  super_admin: ['*'],
 };
 
 /**
@@ -35,7 +38,8 @@ export const ROLE_CLEARANCE = {
  */
 export function hasRouteAccess(role, pathname) {
   if (!role) return false;
-  const allowed = ROLE_CLEARANCE[role];
+  const normalizedRole = String(role).toLowerCase().trim();
+  const allowed = ROLE_CLEARANCE[normalizedRole];
   if (!allowed) return false;
   if (allowed.includes('*')) return true;
   return allowed.some((prefix) => pathname.startsWith(prefix));
@@ -46,14 +50,16 @@ export function hasRouteAccess(role, pathname) {
  * Used to redirect unauthorised access back to the user's own desk.
  */
 export function getHomeRoute(role) {
-  const clearance = ROLE_CLEARANCE[role];
+  const normalizedRole = String(role || '').toLowerCase().trim();
+  const clearance = ROLE_CLEARANCE[normalizedRole];
   if (!clearance) return '/admin/login';
   if (clearance.includes('*')) return '/admin/sysadmin';
   return clearance[0];
 }
 
 /**
- * Roles that should NOT see the credential quick-select tiles on the login page.
- * Senior/independent roles must type their own departmental IDs.
+ * All roles can be selected directly for evaluation and fast triage.
  */
-export const SENIOR_ROLES = new Set(['director', 'ig', 'judiciary', 'swo', 'sysadmin']);
+export const SENIOR_ROLES = new Set();
+
+

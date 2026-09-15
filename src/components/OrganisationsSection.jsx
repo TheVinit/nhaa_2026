@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Scale, GraduationCap, Landmark, HeartHandshake } from 'lucide-react';
 
 const organisations = [
   {
@@ -67,13 +67,15 @@ const OrganisationsSection = () => {
         {/* Key points */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           {[
-            { text: 'Promotes equality and social participation for all communities', icon: '⚖️' },
-            { text: 'Builds skills and education pathways for self-reliance', icon: '📚' },
-            { text: 'Enables financial inclusion and livelihood opportunities', icon: '💰' },
-            { text: 'Provides rehabilitation and welfare support for vulnerable groups', icon: '🤝' },
+            { text: 'Promotes equality and social participation for all communities', Icon: Scale, color: '#003087' },
+            { text: 'Builds skills and education pathways for self-reliance', Icon: GraduationCap, color: '#059669' },
+            { text: 'Enables financial inclusion and livelihood opportunities', Icon: Landmark, color: '#D97706' },
+            { text: 'Provides rehabilitation and welfare support for vulnerable groups', Icon: HeartHandshake, color: '#7C3AED' },
           ].map((point) => (
             <div key={point.text} className="flex items-start gap-2.5 p-3 bg-[#f8f9fa] rounded-xl border border-gray-100">
-              <span className="text-xl shrink-0">{point.icon}</span>
+              <span className="shrink-0 p-1 rounded-lg bg-white shadow-sm" style={{ color: point.color }}>
+                <point.Icon size={18} />
+              </span>
               <p className="text-[11px] text-gray-600 leading-snug">{point.text}</p>
             </div>
           ))}

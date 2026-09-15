@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 
 export default function DisclaimerBanner() {
   const [dismissed, setDismissed] = useState(false);
@@ -50,14 +50,17 @@ export default function DisclaimerBanner() {
             borderRadius: 3,
             letterSpacing: '0.04em',
             textTransform: 'uppercase',
-            display: 'inline-block',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
           }}
         >
+          <AlertTriangle size={11} color="#000000" />
           SIH 2026 Prototype
         </span>
 
         <span style={{ fontWeight: 400, color: '#CBD5E1', lineHeight: 1.4 }}>
-          ⚠️ <strong style={{ color: '#FFFFFF' }}>Academic Demonstration Only:</strong> This portal is a working replica developed solely for <strong>Smart India Hackathon (SIH 2026 - Problem Statement 14566)</strong> evaluation and is NOT an official government website.
+          <strong style={{ color: '#FFFFFF' }}>Academic Demonstration Only:</strong> This portal is a working replica developed solely for <strong>Smart India Hackathon (Problem Statement-SIH26093 By Team Asterisk )</strong> evaluation and is NOT an official government website.
         </span>
       </div>
 

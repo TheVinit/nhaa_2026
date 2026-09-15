@@ -33,7 +33,7 @@ export default function TendersPage() {
                 rel="noreferrer"
                 style={{ background: '#0073E6', color: '#fff', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}
               >
-                Download Tender Document (PDF) 📄
+                Download Tender Document (PDF)
               </a>
             </div>
           ))}

@@ -1377,7 +1377,7 @@ export default function GrievanceRegistrationWizard({
                   <FileText size={16} />
                   <span>{grievanceData.evidenceFile}</span>
                 </div>
-                <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 700 }}>✓ Attached</span>
+                <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 700 }}>Attached</span>
               </div>
             </div>
           </div>
@@ -1480,7 +1480,7 @@ export default function GrievanceRegistrationWizard({
                 </div>
                 <div>
                   <span style={{ color: '#64748B', fontSize: '11px', display: 'block' }}>Mobile Verification</span>
-                  <span style={{ color: '#16A34A', fontWeight: 700 }}>✓ Verified (MVP Demo)</span>
+                  <span style={{ color: '#16A34A', fontWeight: 700 }}>Verified (MVP Demo)</span>
                 </div>
               </div>
             </div>
@@ -1504,8 +1504,8 @@ export default function GrievanceRegistrationWizard({
                   <div><strong>{informerData.fullName}</strong> ({informerData.relation})</div>
                   <div style={{ color: '#64748B' }}>Phone: {informerData.mobile}</div>
                   <div style={{ color: '#64748B' }}>District: {informerData.district}, {informerData.state}</div>
-                  <div style={{ color: '#166534', fontSize: '11.5px', marginTop: 4 }}>
-                    {informerData.isConfidential ? '🔒 Identity Confidential' : 'Public Complainant'}
+                  <div style={{ color: '#166534', fontSize: '11.5px', marginTop: 4, fontWeight: 700 }}>
+                    {informerData.isConfidential ? 'Identity Confidential (Protected)' : 'Public Complainant'}
                   </div>
                 </div>
               </div>

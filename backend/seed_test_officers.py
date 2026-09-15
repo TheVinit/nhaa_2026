@@ -62,6 +62,14 @@ TEST_OFFICERS = [
         "state": None,
         "badge_id": "IG-001",
     },
+    {
+        "name": "System Administrator",
+        "username": "sysadmin",
+        "role": OfficerRole.sysadmin,
+        "district": None,
+        "state": None,
+        "badge_id": "SYS-001",
+    },
 ]
 
 

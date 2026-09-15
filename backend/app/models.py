@@ -48,6 +48,8 @@ class OfficerRole(str, PyEnum):
     director = "director"      # Director — monitors all tier activities (Level 3+)
     judiciary = "judiciary"     # Judiciary — reviews audit trail, renders decisions (Level 4)
     swo = "swo"                # Social Welfare Officer — rehabilitation follow-up (Level 5)
+    sysadmin = "sysadmin"      # System Administrator — full-tier oversight and cross-tier monitoring
+    super_admin = "super_admin" # Super Administrator alias
     # Compatibility with existing historical DB rows
     district = "district"
     state = "state"

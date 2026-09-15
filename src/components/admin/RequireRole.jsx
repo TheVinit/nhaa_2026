@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 import { getSession } from '../../utils/adminAuth';
 import { hasRouteAccess, getHomeRoute } from '../../utils/roleGuard';
 
@@ -42,7 +43,9 @@ export default function RequireRole({ children }) {
           padding: '32px 48px',
           maxWidth: 480,
         }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🚫</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <ShieldAlert size={48} color="#DC2626" />
+          </div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: '#991B1B', margin: '0 0 8px' }}>
             Access Denied
           </h2>

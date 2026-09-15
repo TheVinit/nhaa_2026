@@ -69,6 +69,14 @@ const ExternalLinkIcon = () => (
   </svg>
 );
 
+const GlobeIcon = ({ size = 14, color = '#FFFFFF' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+);
+
 const AccessibilityIcon = () => (
   <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
     <path d="M12 2a2 2 0 100 4 2 2 0 000-4zm-1 6h2v6h-2V8zm-3 0h2v12H8V8zm8 0h2v12h-2V8z" />
@@ -268,8 +276,8 @@ export default function NhaaPage() {
             <span style={{ opacity: 0.4 }}>|</span>
 
             {/* Language Selector Dropdown */}
-            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 13 }}>🌐</span>
+            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <GlobeIcon size={13} color="#FFFFFF" />
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
@@ -1056,7 +1064,7 @@ export default function NhaaPage() {
       >
         <div style={{ maxWidth: 1220, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
           <div style={{ color: '#FCD34D', fontWeight: 600 }}>
-            ⚠️ Academic &amp; Evaluation Disclaimer: This portal is a working prototype created exclusively for Smart India Hackathon (SIH 2026) Problem Statement 14566.
+            Academic &amp; Evaluation Disclaimer: This portal is a working prototype created exclusively for Smart India Hackathon (SIH 2026) Problem Statement 14566.
           </div>
           <div>
             It is designed strictly for technical demonstration, research, and jury evaluation and is NOT an official government website.
@@ -1145,19 +1153,19 @@ export default function NhaaPage() {
                 onClick={() => { setActiveTab('grievance'); setChatbotOpen(false); }}
                 style={{ background: '#EEF2FF', color: '#003366', border: '1px solid #C7D7FD', padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
               >
-                📝 How do I register a grievance?
+                How do I register a grievance?
               </button>
               <button
                 onClick={() => { setActiveModal('rescue'); setChatbotOpen(false); }}
                 style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
               >
-                🚨 Emergency distress report (Rescue)
+                Emergency distress report (Rescue)
               </button>
               <button
                 onClick={() => { setActiveModal('track'); setChatbotOpen(false); }}
                 style={{ background: '#F8FAFC', color: '#334155', border: '1px solid #CBD5E1', padding: '8px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
               >
-                🔍 Track my complaint status
+                Track my complaint status
               </button>
             </div>
           </div>
@@ -1242,7 +1250,7 @@ export default function NhaaPage() {
                   onSubmit={(e) => {
                     e.preventDefault();
                     const newId = `NHAA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-                    alert(`✅ Grievance Registered Successfully!\n\nYour Reference ID is: ${newId}\nYou will receive SMS updates with assigned officer contact.`);
+                    alert(`Grievance Registered Successfully!\n\nYour Reference ID is: ${newId}\nYou will receive SMS updates with assigned officer contact.`);
                     setActiveModal(null);
                   }}
                   style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
@@ -1387,13 +1395,13 @@ export default function NhaaPage() {
                     marginBottom: 16,
                   }}
                 >
-                  ⚡ <strong>Emergency Action:</strong> This alert triggers instant notification to the nearest Police Station SP/DSP Control Room.
+                  <strong>Emergency Action:</strong> This alert triggers instant notification to the nearest Police Station SP/DSP Control Room.
                 </div>
 
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    alert('🚨 Emergency Rescue Alert Dispatched!\n\nPolice Control Room and District Rapid Response Unit have been alerted with your location.');
+                    alert('Emergency Rescue Alert Dispatched!\n\nPolice Control Room and District Rapid Response Unit have been alerted with your location.');
                     setActiveModal(null);
                   }}
                   style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
@@ -1462,7 +1470,7 @@ export default function NhaaPage() {
                       boxShadow: '0 4px 14px rgba(220,38,38,0.3)',
                     }}
                   >
-                    🚨 Send Emergency Rescue Alert Now
+                    Send Emergency Rescue Alert Now
                   </button>
                 </form>
               </div>

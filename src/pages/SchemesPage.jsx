@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Search, Phone } from 'lucide-react';
 
 
 const SCHEMES_DATA = [
@@ -160,7 +161,9 @@ export default function SchemesPage() {
                 background: '#F8FAFC'
               }}
             />
-            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: '#94A3B8' }}>🔍</span>
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', color: '#94A3B8' }}>
+              <Search size={16} />
+            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -249,7 +252,7 @@ export default function SchemesPage() {
               </p>
 
               <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: 8, fontSize: 12, color: '#334155', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>📞 Helpline:</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Phone size={13} /> Helpline:</span>
                 <strong>{scheme.helpline}</strong>
               </div>
 

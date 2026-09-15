@@ -1399,9 +1399,9 @@ function HomePage() {
                 Under the visionary guidance of Hon'ble Minister Dr. Virendra Kumar, Department of Social Justice &amp; Empowerment continues to empower marginalized communities across the nation through inclusive education, skill training, and rapid relief mechanisms.
               </p>
               <div style={{ display: 'flex', gap: 20, fontSize: 12, color: '#64748B', paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
-                <span>👍 8 Likes</span>
-                <span>💬 2 Comments</span>
-                <span>↗ 1 Share</span>
+                <span>8 Likes</span>
+                <span>2 Comments</span>
+                <span>1 Share</span>
               </div>
             </div>
 
@@ -1433,9 +1433,9 @@ function HomePage() {
               </p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #F1F5F9', fontSize: 12, color: '#64748B' }}>
                 <div style={{ display: 'flex', gap: 16 }}>
-                  <span>❤️ Like</span>
-                  <span>💬 Reply</span>
-                  <span>🔗 Copy link</span>
+                  <span>Like</span>
+                  <span>Reply</span>
+                  <span>Copy link</span>
                 </div>
                 <span style={{ color: '#0073E6', fontWeight: 600, cursor: 'pointer' }}>Read 1 reply</span>
               </div>
@@ -1651,19 +1651,19 @@ function HomePage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link to="/nhaa" onClick={() => setShowImportantLinks(false)} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, textDecoration: 'none', color: '#003366', fontWeight: 700, fontSize: 13 }}>
-                📞 NHAA / SAMBAL Helpline (14566)
+                NHAA / SAMBAL Helpline (14566)
               </Link>
               <Link to="/samavesh" onClick={() => setShowImportantLinks(false)} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, textDecoration: 'none', color: '#003366', fontWeight: 700, fontSize: 13 }}>
-                🌐 SAMAVESH Single Window Portal
+                SAMAVESH Single Window Portal
               </Link>
               <Link to="/schemes" onClick={() => setShowImportantLinks(false)} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, textDecoration: 'none', color: '#003366', fontWeight: 700, fontSize: 13 }}>
-                📑 All Schemes &amp; Scholarships
+                All Schemes &amp; Scholarships
               </Link>
               <Link to="/tenders" onClick={() => setShowImportantLinks(false)} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, textDecoration: 'none', color: '#003366', fontWeight: 700, fontSize: 13 }}>
-                📢 Tenders &amp; Notices
+                Tenders &amp; Notices
               </Link>
               <Link to="/contact-us" onClick={() => setShowImportantLinks(false)} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, textDecoration: 'none', color: '#003366', fontWeight: 700, fontSize: 13 }}>
-                🏢 Ministry Directory &amp; Contact
+                Ministry Directory &amp; Contact
               </Link>
             </div>
           </div>

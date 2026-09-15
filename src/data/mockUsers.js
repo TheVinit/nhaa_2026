@@ -37,10 +37,16 @@ export const MOCK_USERS = OFFICERS.map((u) => ({ ...u, password: 'demo123' }));
 export function authenticateMockUser(username, password) {
   const uname = username.trim().toLowerCase();
 
-  // Sysadmin: separate password, not in OFFICERS list
+  // Sysadmin: accepts Test@1234, Admin@1234, or demo123
   if (uname === 'sysadmin') {
-    if (password === SYSADMIN_PASSWORD) {
-      return { username: 'sysadmin', role: 'sysadmin', name: 'System Administrator (NHAA)' };
+    if (ACCEPTED_PASSWORDS.has(password) || password === SYSADMIN_PASSWORD) {
+      return {
+        username: 'sysadmin',
+        role: 'sysadmin',
+        name: 'System Administrator (NHAA Central Command)',
+        district: 'National Command',
+        state: 'All India',
+      };
     }
     return null;
   }

@@ -29,6 +29,7 @@ SUPERVISORY_ROLES = {
     OfficerRole.director,
     OfficerRole.judiciary,
     OfficerRole.swo,
+    OfficerRole.sysadmin,
 }
 
 
@@ -66,9 +67,13 @@ def require_role(*allowed_roles: str):
             expanded.update(["swo", "welfare", "social_welfare"])
 
     async def _check(officer: TokenPayload = Depends(get_current_officer)) -> TokenPayload:
+        # System administrator has global access to all endpoints
+        role_lower = str(officer.role).lower()
+        if role_lower in ("sysadmin", "super_admin", "system_admin"):
+            return officer
         if officer.role not in expanded:
             # If IG, Director, or super_admin, always allow
-            if str(officer.role).lower() in ("ig", "ministry", "ministry_admin", "national", "super_admin", "director"):
+            if role_lower in ("ig", "ministry", "ministry_admin", "national", "director"):
                 return officer
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -95,7 +100,7 @@ def build_case_filter(officer: TokenPayload):
     role = officer.role
     clauses = []
 
-    if role in (OfficerRole.ig.value, OfficerRole.director.value, OfficerRole.judiciary.value):
+    if role in (OfficerRole.ig.value, OfficerRole.director.value, OfficerRole.judiciary.value, "sysadmin", "super_admin"):
         pass  # sees everything
 
     elif role == OfficerRole.swo.value:

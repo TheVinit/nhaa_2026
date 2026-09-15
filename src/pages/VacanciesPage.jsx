@@ -33,7 +33,7 @@ export default function VacanciesPage() {
                 rel="noreferrer"
                 style={{ background: '#DC2626', color: '#fff', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}
               >
-                Download Notice (PDF) 📄
+                Download Notice (PDF)
               </a>
             </div>
           ))}

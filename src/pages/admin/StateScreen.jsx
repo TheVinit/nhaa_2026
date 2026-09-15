@@ -11,6 +11,7 @@ import TrendChart from '../../components/admin/TrendChart';
 import StateComparisonTable from '../../components/admin/StateComparisonTable';
 import RiskBadge from '../../components/admin/RiskBadge';
 import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
+import CaseSortBar from '../../components/admin/CaseSortBar';
 import { useLang } from '../../i18n/LangContext';
 import { ADMIN_TRANSLATIONS } from '../../i18n/adminTranslations';
 
@@ -64,6 +65,8 @@ export default function StateScreen() {
   const [selectedState] = useState('Maharashtra');
   const [activeTab, setActiveTab] = useState('cases'); // 'cases' | 'analytics'
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortKey, setSortKey] = useState('created_at');
+  const [sortDir, setSortDir] = useState('desc');
   const { lang } = useLang();
   const at = ADMIN_TRANSLATIONS[lang] || ADMIN_TRANSLATIONS.en;
 
@@ -124,6 +127,30 @@ export default function StateScreen() {
       if (!matchId && !matchName && !matchLoc && !matchDesc && !matchPhone) return false;
     }
     return true;
+  });
+
+  const TIER_ORDER_LOCAL = { critical: 0, high: 1, moderate: 2, low: 3 };
+  const sortedCases = [...filteredCases].sort((a, b) => {
+    let av, bv;
+    if (sortKey === 'svi_score' || sortKey === 'sviScore') {
+      av = Number(a.svi_score ?? a.sviScore ?? 0);
+      bv = Number(b.svi_score ?? b.sviScore ?? 0);
+    } else if (sortKey === 'status') {
+      av = a.status || '';
+      bv = b.status || '';
+    } else if (sortKey === 'created_at' || sortKey === 'createdAt') {
+      av = new Date(a.created_at || a.createdAt || 0).getTime();
+      bv = new Date(b.created_at || b.createdAt || 0).getTime();
+    } else if (sortKey === 'risk_tier' || sortKey === 'riskTier') {
+      av = TIER_ORDER_LOCAL[a.risk_tier || a.riskTier] ?? 99;
+      bv = TIER_ORDER_LOCAL[b.risk_tier || b.riskTier] ?? 99;
+    } else {
+      av = a[sortKey] || '';
+      bv = b[sortKey] || '';
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
   });
 
   return (
@@ -247,6 +274,13 @@ export default function StateScreen() {
 
           {/* Cases Table */}
           <div style={{ background: '#FFFFFF', borderRadius: 8, border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CaseSortBar
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
+              count={sortedCases.length}
+              label="State SP Oversight & Escalation Queue"
+            />
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #CBD5E1', color: '#334155' }}>
@@ -259,7 +293,13 @@ export default function StateScreen() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCases.map((c) => (
+                {sortedCases.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: 32, textAlign: 'center', color: '#94A3B8' }}>
+                      No cases matching current filters.
+                    </td>
+                  </tr>
+                ) : sortedCases.map((c) => (
                   <tr
                     key={c.id}
                     style={{ borderBottom: '1px solid #E2E8F0', transition: 'background 0.15s ease' }}

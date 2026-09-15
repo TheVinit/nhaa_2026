@@ -11,11 +11,17 @@ import {
   HeartHandshake,
   Menu,
   ChevronLeft,
-  ChevronRight,
   LogOut,
-  Radio,
-  UserCheck,
   CheckCircle2,
+  ShieldCheck,
+  LayoutDashboard,
+  Clock as ClockIcon,
+  Settings,
+  HelpCircle,
+  Mail,
+  X,
+  Send,
+  Check,
 } from 'lucide-react';
 import { ASSETS } from '../../assets';
 import { getSession, clearSession, ROLE_LABELS } from '../../utils/adminAuth';
@@ -32,34 +38,38 @@ const RANK_CONFIG = {
   director:  { code: 'L-3+',  label: 'Director (Central Oversight)', jurisdiction: 'Apex Cross-Tier Performance', Icon: Building2 },
   judiciary: { code: 'L-4',   label: 'Judiciary / Legal Authority', jurisdiction: 'Audit Trail & SWO Directives', Icon: Scale },
   swo:       { code: 'L-5',   label: 'Social Welfare Officer (SWO)', jurisdiction: 'Victim Rehabilitation & Schemes', Icon: HeartHandshake },
+  sysadmin:  { code: 'SYS',   label: 'System Administrator', jurisdiction: 'Full Tier Governance & Monitoring', Icon: ShieldCheck },
 };
 
 const ADMIN_NAV = [
-  { label: 'Operator Desk',      path: '/admin/operator',  code: 'L-0',   Icon: Headphones, desc: 'Call Centre & AI Triage Queue', roles: ['operator', 'dsp', 'acp', 'sp', 'ig', 'director'] },
-  { label: 'IO Field Ops',       path: '/admin/io',        code: 'L-0.5', Icon: Search, desc: 'Ground Investigation & Site Evidence (Supervisory Monitor)', roles: ['io', 'dsp', 'acp', 'sp', 'ig', 'director'] },
-  { label: 'ACP Command',        path: '/admin/acp',       code: 'L-1',   Icon: ShieldAlert, desc: 'Case Scrutiny & Field Forwarding', roles: ['acp', 'dsp', 'sp', 'ig', 'director'] },
-  { label: 'DSP Operations',     path: '/admin/dsp',       code: 'L-1',   Icon: Shield, desc: 'District Field Operations & Inquiry', roles: ['dsp', 'sp', 'ig', 'director'] },
-  { label: 'SP Oversight',       path: '/admin/sp',        code: 'L-2',   Icon: Award, desc: 'Delay Alert System & Case Lock to Judiciary', roles: ['sp', 'ig', 'director'] },
-  { label: 'IG Intelligence',    path: '/admin/ig',        code: 'L-3',   Icon: Award, desc: 'National Overview & Apex Review', roles: ['ig', 'director'] },
+  { label: 'Operator Desk',      path: '/admin/operator',  code: 'L-0',   Icon: Headphones, desc: 'Call Centre & AI Triage Queue', roles: ['operator'] },
+  { label: 'IO Field Ops',       path: '/admin/io',        code: 'L-0.5', Icon: Search, desc: 'Ground Investigation & Site Evidence', roles: ['io'] },
+  { label: 'ACP Command',        path: '/admin/acp',       code: 'L-1',   Icon: ShieldAlert, desc: 'Case Scrutiny & Field Forwarding', roles: ['acp'] },
+  { label: 'DSP Operations',     path: '/admin/dsp',       code: 'L-1',   Icon: Shield, desc: 'District Field Operations & Inquiry', roles: ['dsp'] },
+  { label: 'SP Oversight',       path: '/admin/sp',        code: 'L-2',   Icon: Award, desc: 'Delay Alert System & Case Lock to Judiciary', roles: ['sp'] },
+  { label: 'IG Intelligence',    path: '/admin/ig',        code: 'L-3',   Icon: Award, desc: 'National Overview & Apex Review', roles: ['ig'] },
   { label: 'Director Control',   path: '/admin/director',  code: 'L-3+',  Icon: Building2, desc: 'Full-Tier Performance & Aggregate KPIs', roles: ['director'] },
-  { label: 'Judiciary Review',   path: '/admin/judiciary', code: 'L-4',   Icon: Scale, desc: 'Audit Trail Scrutiny & Directives to SWO', roles: ['judiciary', 'director'] },
-  { label: 'SWO Rehabilitation', path: '/admin/swo',       code: 'L-5',   Icon: HeartHandshake, desc: 'Victim Rehabilitation & Welfare Tracking', roles: ['swo', 'judiciary', 'director'] },
+  { label: 'Judiciary Review',   path: '/admin/judiciary', code: 'L-4',   Icon: Scale, desc: 'Audit Trail Scrutiny & Directives to SWO', roles: ['judiciary'] },
+  { label: 'SWO Rehabilitation', path: '/admin/swo',       code: 'L-5',   Icon: HeartHandshake, desc: 'Victim Rehabilitation & Welfare Tracking', roles: ['swo'] },
+  { label: 'System Admin Console', path: '/admin/sysadmin', code: 'SYS', Icon: ShieldCheck, desc: 'Full Tier Monitoring & Live Audit', roles: ['sysadmin', 'super_admin'] },
 ];
 
 /**
  * Real-Life Statutory Hierarchy Access Check (SC/ST PoA Act & Rules 1995)
- * Subordinates (Operator L-0, IO L-0.5) can NEVER access superior command desks.
- * Superior officers only monitor IO submissions from their supervisory purview.
+ * Officers are strictly confined to their own designated operational desk.
+ * Only the System Administrator (sysadmin / super_admin) has clearance across all desks.
  */
 function isRoleAuthorized(requiredRoles, currentRole) {
   if (!currentRole) return false;
-  if (currentRole === 'director' || currentRole === 'super_admin') return true;
-  return requiredRoles.includes(currentRole);
+  const roleNorm = String(currentRole).toLowerCase().trim();
+  if (roleNorm === 'sysadmin' || roleNorm === 'super_admin') return true;
+  return requiredRoles.includes(roleNorm);
 }
 
 function navVisible(item, role) {
   return isRoleAuthorized(item.roles, role);
 }
+
 
 function Clock() {
   const [time, setTime] = useState(new Date());
@@ -85,21 +95,68 @@ export default function AdminLayout({ children }) {
   const rank = RANK_CONFIG[role] || RANK_CONFIG.dsp;
   const RankIcon = rank.Icon || Shield;
 
+  const searchParams = new URLSearchParams(location.search);
+  const currentView = searchParams.get('view') || 'overview';
+  const basePath = (role === 'sysadmin' || role === 'super_admin')
+    ? '/admin/sysadmin'
+    : (ADMIN_NAV.find((n) => n.roles.includes(role))?.path || '/admin/dsp');
+
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('nhaa_admin_sidebar_collapsed');
     return saved === 'true';
   });
 
-  const [stats, setStats] = useState({
-    total: 24,
-    critical: 13,
-    pending_sla: 4,
-    resolved: 7,
+  const [stats, setStats] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('nhaa_case_counts') || '{}');
+      return {
+        total: stored.total || 24,
+        critical: stored.critical || 13,
+        pending_sla: stored.pending || 4,
+        resolved: stored.resolved || 7,
+      };
+    } catch { return { total: 24, critical: 13, pending_sla: 4, resolved: 7 }; }
   });
+
+  // Poll localStorage for live counts written by DistrictScreen
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('nhaa_case_counts') || '{}');
+        if (stored.total) {
+          setStats({
+            total: stored.total,
+            critical: stored.critical || 0,
+            pending_sla: stored.pending || 0,
+            resolved: stored.resolved || 0,
+          });
+        }
+      } catch {}
+    };
+    const t = setInterval(refresh, 5000);
+    refresh();
+    return () => clearInterval(t);
+  }, []);
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState('supervisor');
   const [emailSent, setEmailSent] = useState(false);
+
+  const [showTrackModal, setShowTrackModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
+
+
+  const [trackQuery, setTrackQuery] = useState('NHAA-1008');
+
+  const [stationSettings, setStationSettings] = useState({
+    stationName: 'Pune District Command Desk (NHAA 14566)',
+    audioAlerts: true,
+    autoDispatchCritical: true,
+    language: 'English',
+  });
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {
@@ -112,24 +169,6 @@ export default function AdminLayout({ children }) {
   const handleLogout = () => {
     clearSession();
     navigate('/admin/login');
-  };
-
-  const handleRoleSwitch = (newRole) => {
-    const mockUser = {
-      username: newRole,
-      role: newRole,
-      name: `${RANK_CONFIG[newRole]?.label || newRole} (Demo Clearance)`,
-      district: 'Pune District',
-      state: 'Maharashtra',
-      token: 'demo-token-hierarchy-switch',
-    };
-    setSession(mockUser);
-    const targetNav = ADMIN_NAV.find((n) => n.roles.includes(newRole));
-    if (targetNav) {
-      navigate(targetNav.path);
-    } else {
-      window.location.reload();
-    }
   };
 
   const sidebarWidth = collapsed ? 72 : 280;
@@ -286,10 +325,10 @@ export default function AdminLayout({ children }) {
 
         {/* Right Officer Status & Role Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Desk Switcher restricted strictly to authorized supervisory scope */}
+          {/* Desk Switcher restricted strictly to sysadmin cross-tier oversight */}
           {ADMIN_NAV.filter((item) => navVisible(item, role)).length > 1 ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: '4px 10px', borderRadius: 6, border: '1px solid #CBD5E1' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>Supervisory Desk:</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>SysAdmin Cross-Desk Switcher:</span>
               <select
                 value={location.pathname}
                 onChange={(e) => navigate(e.target.value)}
@@ -325,6 +364,42 @@ export default function AdminLayout({ children }) {
             </div>
           )}
 
+          {/* Quick Total Cases Navbar Button */}
+          <button
+            type="button"
+            onClick={() => navigate(`${basePath}?view=cases`)}
+            title="Open Total Cases Dossier"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: currentView === 'cases' ? '#EFF6FF' : '#FFFFFF',
+              border: currentView === 'cases' ? '1.5px solid rgb(0, 115, 230)' : '1px solid #CBD5E1',
+              padding: '6px 12px',
+              borderRadius: 6,
+              cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgb(0, 115, 230)'; }}
+            onMouseLeave={(e) => { if (currentView !== 'cases') e.currentTarget.style.borderColor = '#CBD5E1'; }}
+          >
+            <Shield size={14} color="rgb(0, 115, 230)" />
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1E293B' }}>Total Cases:</span>
+            <span style={{
+              fontFamily: 'monospace',
+              fontSize: 11,
+              fontWeight: 900,
+              background: 'rgb(0, 115, 230)',
+              color: '#FFFFFF',
+              padding: '1.5px 7px',
+              borderRadius: 4,
+              letterSpacing: '0.5px',
+            }}>
+              {String(stats.total || 24).padStart(3, '0')}
+            </span>
+          </button>
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -348,10 +423,10 @@ export default function AdminLayout({ children }) {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
-                {session?.name || 'DySP Rajesh Shinde'}
+                {session?.name || (role === 'sysadmin' ? 'System Administrator' : 'DySP Rajesh Shinde')}
               </div>
               <div style={{ fontSize: 10, color: 'rgb(0, 115, 230)', fontWeight: 800, marginTop: 1 }}>
-                {rank.code}: {rank.label} &bull; Pune
+                {rank.code}: {rank.label} &bull; {session?.district || 'Pune'}
               </div>
             </div>
           </div>
@@ -376,7 +451,7 @@ export default function AdminLayout({ children }) {
             onMouseEnter={(e) => { e.currentTarget.style.background = '#E0F2FE'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
           >
-            📧 Email Report
+            <Mail size={13} /> Email Report
           </button>
 
           <button
@@ -424,144 +499,305 @@ export default function AdminLayout({ children }) {
             overflowX: 'hidden',
           }}
         >
-          {/* Top Section: Navigation Items */}
-          <div style={{ padding: '16px 10px' }}>
-            <div style={{
-              padding: collapsed ? '0 4px 12px' : '0 10px 12px',
-              borderBottom: '1px solid #F1F5F9',
-              marginBottom: 12,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: collapsed ? 'center' : 'space-between',
-            }}>
-              {!collapsed && (
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748B' }}>
-                  Authorized Desks ({rank.code})
-                </span>
-              )}
-              <span style={{
-                fontSize: 9,
-                fontWeight: 900,
-                background: '#FF9933',
-                color: '#000000',
-                padding: '2px 6px',
-                borderRadius: 4,
-              }}>
-                POA ACT 1989
-              </span>
-            </div>
+          {/* Top Section: Navigation Menu */}
+          <div style={{ padding: collapsed ? '14px 6px' : '16px 12px' }}>
 
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {ADMIN_NAV.filter((item) => navVisible(item, role)).map((item) => {
-                const isActive = location.pathname === item.path;
-                const ItemIcon = item.Icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    title={collapsed ? `${item.code} - ${item.label}: ${item.desc}` : undefined}
+            {/* Operational Navigation List */}
+            {(() => {
+              const searchParams = new URLSearchParams(location.search);
+              const currentView = searchParams.get('view') || 'overview';
+              const basePath = (role === 'sysadmin' || role === 'super_admin')
+                ? '/admin/sysadmin'
+                : (ADMIN_NAV.find((n) => n.roles.includes(role))?.path || '/admin/dsp');
+
+              return (
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {/* 1. Dashboard (Overview & Visual Graphs) */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`${basePath}?view=overview`)}
+                    title={collapsed ? "Dashboard Overview" : undefined}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 12,
-                      padding: collapsed ? '12px 0' : '10px 12px',
+                      padding: collapsed ? '11px 0' : '10px 14px',
                       justifyContent: collapsed ? 'center' : 'flex-start',
                       borderRadius: 8,
                       fontSize: 13,
-                      fontWeight: isActive ? 800 : 600,
-                      color: isActive ? '#FFFFFF' : '#334155',
-                      background: isActive ? 'rgb(0, 115, 230)' : 'transparent',
-                      border: isActive ? '1px solid rgb(0, 115, 230)' : '1px solid transparent',
-                      boxShadow: isActive ? '0 4px 12px rgba(0, 115, 230, 0.22)' : 'none',
-                      textDecoration: 'none',
+                      fontWeight: currentView === 'overview' ? 800 : 600,
+                      color: currentView === 'overview' ? 'rgb(0, 115, 230)' : '#334155',
+                      background: currentView === 'overview' ? '#EFF6FF' : 'transparent',
+                      border: currentView === 'overview' ? '1px solid #DBEAFE' : '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
                       transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap',
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = '#F0F7FF';
-                        e.currentTarget.style.borderColor = '#BFDBFE';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.borderColor = 'transparent';
-                      }
-                    }}
+                    onMouseEnter={(e) => { if (currentView !== 'overview') e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={(e) => { if (currentView !== 'overview') e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <span style={{ minWidth: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <ItemIcon size={17} color={isActive ? '#FFFFFF' : '#64748B'} />
-                    </span>
+                    <LayoutDashboard size={18} color={currentView === 'overview' ? 'rgb(0, 115, 230)' : '#475569'} />
+                    {!collapsed && <span>Overview &amp; KPIs</span>}
+                  </button>
 
+                  {/* 2. Total Cases (Dossiers & Full Details) */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`${basePath}?view=cases`)}
+                    title={collapsed ? `Total Cases (${stats.total})` : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: currentView === 'cases' ? 800 : 600,
+                      color: currentView === 'cases' ? 'rgb(0, 115, 230)' : '#334155',
+                      background: currentView === 'cases' ? '#EFF6FF' : 'transparent',
+                      border: currentView === 'cases' ? '1px solid #DBEAFE' : '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { if (currentView !== 'cases') e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={(e) => { if (currentView !== 'cases') e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Shield size={17} color={currentView === 'cases' ? 'rgb(0, 115, 230)' : '#475569'} />
                     {!collapsed && (
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ color: isActive ? '#FFFFFF' : '#0F172A', fontSize: 13, fontWeight: isActive ? 800 : 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {item.label}
-                          </span>
-                          <span style={{
-                            fontSize: 9,
-                            fontWeight: 800,
-                            padding: '2px 5px',
-                            borderRadius: 4,
-                            background: isActive ? 'rgba(255,255,255,0.25)' : '#F1F5F9',
-                            color: isActive ? '#FFFFFF' : '#475569',
-                            marginLeft: 6,
-                          }}>
-                            {item.code}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: 10, color: isActive ? '#E0F2FE' : '#64748B', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {item.desc}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                        <span>Total Cases</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 900, background: '#DBEAFE', color: 'rgb(0, 115, 230)', padding: '1px 7px', borderRadius: 4 }}>
+                          {String(stats.total).padStart(3, '0')}
                         </span>
                       </div>
                     )}
-                  </Link>
-                );
-              })}
-            </nav>
+                  </button>
 
-            {/* Live Case Queue Breakdown in Sidebar */}
-            {!collapsed && (
-              <div style={{
-                marginTop: 18,
-                padding: '12px',
-                background: '#F8FAFC',
-                borderRadius: 8,
-                border: '1px solid #E2E8F0',
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Live Queue Metrics</span>
-                  <span style={{ color: '#16A34A', fontSize: 9 }}>● Live Synced</span>
+                  {/* 3. Pending Review */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`${basePath}?view=pending`)}
+                    title={collapsed ? `Pending Cases (${stats.pending_sla})` : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: currentView === 'pending' ? 800 : 600,
+                      color: currentView === 'pending' ? '#B45309' : '#334155',
+                      background: currentView === 'pending' ? '#FFFBEB' : 'transparent',
+                      border: currentView === 'pending' ? '1px solid #FDE68A' : '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { if (currentView !== 'pending') e.currentTarget.style.background = '#FFFBEB'; }}
+                    onMouseLeave={(e) => { if (currentView !== 'pending') e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <ClockIcon size={17} color={currentView === 'pending' ? '#D97706' : '#D97706'} />
+                    {!collapsed && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                        <span>Pending Cases</span>
+                        <span style={{ fontSize: 9.5, fontWeight: 800, background: '#FEF3C7', color: '#B45309', padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace' }}>
+                          {String(stats.pending_sla).padStart(3, '0')}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+
+                  {/* 4. Approved Cases */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`${basePath}?view=approved`)}
+                    title={collapsed ? `Approved Cases (${stats.resolved})` : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: currentView === 'approved' ? 800 : 600,
+                      color: currentView === 'approved' ? '#15803D' : '#334155',
+                      background: currentView === 'approved' ? '#DCFCE7' : 'transparent',
+                      border: currentView === 'approved' ? '1px solid #86EFAC' : '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { if (currentView !== 'approved') e.currentTarget.style.background = '#F0FDF4'; }}
+                    onMouseLeave={(e) => { if (currentView !== 'approved') e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <CheckCircle2 size={17} color={currentView === 'approved' ? '#16A34A' : '#16A34A'} />
+                    {!collapsed && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                        <span>Approved Cases</span>
+                        <span style={{ fontSize: 9.5, fontWeight: 800, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace' }}>
+                          {String(stats.resolved).padStart(3, '0')}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+
+                  {/* 5. Track Status */}
+                  <button
+                    type="button"
+                    onClick={() => setShowTrackModal(true)}
+                    title={collapsed ? "Track Status" : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#334155',
+                      background: 'transparent',
+                      border: '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Search size={17} color="#475569" />
+                    {!collapsed && <span>Track Status</span>}
+                  </button>
+
+                  {/* 6. Help & FAQs */}
+                  <button
+                    type="button"
+                    onClick={() => setShowHelpModal(true)}
+                    title={collapsed ? "Help & FAQs" : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#334155',
+                      background: 'transparent',
+                      border: '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <HelpCircle size={17} color="#475569" />
+                    {!collapsed && <span>Help &amp; FAQs</span>}
+                  </button>
+
+                  {/* 7. Settings */}
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsModal(true)}
+                    title={collapsed ? "Settings" : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#334155',
+                      background: 'transparent',
+                      border: '1px solid transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Settings size={17} color="#475569" />
+                    {!collapsed && <span>Settings</span>}
+                  </button>
+
+                  {/* 8. Mail Report Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailModal(true)}
+                    title={collapsed ? "Send Official Mail Report" : undefined}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: collapsed ? '11px 0' : '10px 14px',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: '#0369A1',
+                      background: '#F0F9FF',
+                      border: '1.5px solid #BAE6FD',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      marginTop: 6,
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#E0F2FE'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
+                  >
+                    <Mail size={17} color="#0284C7" />
+                    {!collapsed && <span>Send Mail Report</span>}
+                  </button>
+                </nav>
+              );
+            })()}
+
+            {/* Central Oversight for SysAdmin only */}
+            {(role === 'sysadmin' || role === 'super_admin') && !collapsed && (
+              <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1.5px solid #F1F5F9' }}>
+                <div style={{ fontSize: 10, fontWeight: 900, color: '#7C2D12', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Central Oversight</span>
+                  <span style={{ background: '#7C2D12', color: '#FFF', padding: '1px 5px', borderRadius: 3, fontSize: 8 }}>SYS</span>
                 </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>Total Roster:</span>
-                    <span style={{ fontWeight: 800, color: '#0F172A', background: '#E2E8F0', padding: '1px 6px', borderRadius: 4 }}>{stats.total} Cases</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ color: '#DC2626', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#DC2626' }} />
-                      Critical Distress (SVI &gt; 70):
-                    </span>
-                    <span style={{ fontWeight: 900, color: '#991B1B', background: '#FEE2E2', padding: '1px 6px', borderRadius: 4 }}>{stats.critical}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ color: '#D97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D97706' }} />
-                      Pending SLA Dispatch:
-                    </span>
-                    <span style={{ fontWeight: 900, color: '#92400E', background: '#FEF3C7', padding: '1px 6px', borderRadius: 4 }}>{stats.pending_sla}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
-                      Actioned &amp; Resolved:
-                    </span>
-                    <span style={{ fontWeight: 900, color: '#065F46', background: '#D1FAE5', padding: '1px 6px', borderRadius: 4 }}>{stats.resolved}</span>
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 180, overflowY: 'auto' }}>
+                  {ADMIN_NAV.map((n) => (
+                    <Link
+                      key={n.path}
+                      to={n.path}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        textDecoration: 'none',
+                        fontSize: 11.5,
+                        fontWeight: location.pathname === n.path ? 800 : 600,
+                        color: location.pathname === n.path ? '#FFFFFF' : '#334155',
+                        background: location.pathname === n.path ? 'rgb(0, 115, 230)' : 'transparent',
+                      }}
+                    >
+                      <span>{n.label}</span>
+                      <span style={{ fontSize: 8.5, opacity: 0.8 }}>{n.code}</span>
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}
@@ -731,14 +967,21 @@ export default function AdminLayout({ children }) {
         }}>
           <div style={{
             background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12,
-            padding: '28px 32px', width: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            padding: '28px 32px', width: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>📧 Escalate / Send Report</h3>
-            <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 20px', lineHeight: 1.5 }}>
-              Send an encrypted situation report to another tier in the hierarchy.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Mail size={18} color="rgb(0, 115, 230)" /> Escalate / Send Official Report
+              </h3>
+              <button onClick={() => setShowEmailModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={18} />
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Send an encrypted situation report to another tier in the hierarchy or Central Monitoring.
             </p>
             <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
-              Select Recipient Level
+              Select Recipient Tier
             </label>
             <select
               value={emailRecipient}
@@ -749,11 +992,11 @@ export default function AdminLayout({ children }) {
                 color: '#0F172A', fontSize: 13, padding: '10px 12px', marginBottom: 20, outline: 'none',
               }}
             >
-              <option value="supervisor">⬆ Higher Command (SP / IG / Director)</option>
-              <option value="subordinate">⬇ Lower Field Ops (DSP / IO / Operator)</option>
-              <option value="judiciary">⚖ Judiciary / Court Registry</option>
-              <option value="swo">🤝 Social Welfare Officer</option>
-              <option value="sysadmin">🛡️ System Administrator</option>
+              <option value="supervisor">Higher Command (SP / IG / Director)</option>
+              <option value="subordinate">Lower Field Operations (DSP / IO / Operator)</option>
+              <option value="judiciary">Judiciary / Special Court Registry</option>
+              <option value="swo">Social Welfare Officer (DBT Relief)</option>
+              <option value="sysadmin">System Administrator (Central Oversight)</option>
             </select>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
@@ -765,7 +1008,7 @@ export default function AdminLayout({ children }) {
                   if (emailRecipient === 'swo') emailTo = 'welfare@nhaa.gov.in';
 
                   const subject = encodeURIComponent(`NHAA Escalation Report — ${rank.label} (${new Date().toLocaleDateString('en-IN')})`);
-                  const body = encodeURIComponent(`Generating system report from ${rank.label} desk...\n\nTargeting: ${emailRecipient.toUpperCase()}`);
+                  const body = encodeURIComponent(`Generating system report from ${rank.label} desk...\nTargeting: ${emailRecipient.toUpperCase()}\nOfficer: ${session?.name || 'Officer'}\nDistrict: ${session?.district || 'Pune'}`);
                   window.location.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;
                   
                   setEmailSent(true);
@@ -775,9 +1018,11 @@ export default function AdminLayout({ children }) {
                   flex: 1, background: emailSent ? '#166534' : 'rgb(0, 115, 230)',
                   color: '#FFFFFF', border: 'none', borderRadius: 8,
                   padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                {emailSent ? '✓ Opening Email Client...' : 'Generate & Send Email'}
+                {emailSent ? <Check size={14} /> : <Send size={14} />}
+                {emailSent ? 'Opening Email Client...' : 'Generate & Send Email'}
               </button>
               <button
                 onClick={() => setShowEmailModal(false)}
@@ -787,6 +1032,266 @@ export default function AdminLayout({ children }) {
                 }}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Track Status Modal */}
+      {showTrackModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+        }}>
+          <div style={{
+            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12,
+            padding: '28px 32px', width: 520, maxWidth: '92vw',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 800, background: '#EFF6FF', color: 'rgb(0, 115, 230)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                  Central Dossier Registry
+                </span>
+                <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Search size={18} color="rgb(0, 115, 230)" /> Track Dossier Status &amp; Mandate
+                </h3>
+              </div>
+              <button onClick={() => setShowTrackModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+              <input
+                type="text"
+                value={trackQuery}
+                onChange={(e) => setTrackQuery(e.target.value)}
+                placeholder="Enter Case ID e.g. NHAA-1008"
+                style={{ flex: 1, padding: '9px 12px', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: 13 }}
+              />
+              <button
+                type="button"
+                onClick={() => alert(`Found Case Record for ${trackQuery}`)}
+                style={{ background: 'rgb(0, 115, 230)', color: '#FFF', border: 'none', borderRadius: 6, padding: '0 16px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Search
+              </button>
+            </div>
+
+            {/* Dossier Card Preview */}
+            <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 8, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>{trackQuery || 'NHAA-1008'}</span>
+                <span style={{ fontSize: 10, fontWeight: 800, background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: 4 }}>
+                  In Progress &bull; SLA Active
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#334155', fontWeight: 700, marginBottom: 6 }}>
+                Complainant: Smt. Sunita Anand Kamble &bull; +91 98220-43210
+              </div>
+              <div style={{ fontSize: 11.5, color: '#64748B', lineHeight: 1.5 }}>
+                Offence: <strong>PoA Act Section 3(1)(r)(s) &amp; IPC 506</strong><br />
+                Investigating Officer: <strong>DySP Rajesh Shinde (Pune Sub-Div)</strong><br />
+                Section 4 Investigation Mandate: <strong>Day 18 of 60 (42 Days Remaining)</strong><br />
+                Rule 12(4) Relief: <strong>Stage 1 Disbursed (₹1,00,000 via PFMS)</strong>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowTrackModal(false)}
+              style={{ width: '100%', marginTop: 16, background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+            >
+              Close Tracker
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Station Settings Modal */}
+      {showSettingsModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+        }}>
+          <div style={{
+            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12,
+            padding: '28px 32px', width: 480, maxWidth: '92vw',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 800, background: '#EFF6FF', color: 'rgb(0, 115, 230)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                  Station Configuration
+                </span>
+                <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Settings size={18} color="rgb(0, 115, 230)" /> Station &amp; Officer Settings
+                </h3>
+              </div>
+              <button onClick={() => { setShowSettingsModal(false); setSettingsSaved(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                  Station Jurisdiction Name
+                </label>
+                <input
+                  type="text"
+                  value={stationSettings.stationName}
+                  onChange={(e) => setStationSettings({ ...stationSettings, stationName: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A' }}>Telephony Voice Intake Alerts</div>
+                  <div style={{ fontSize: 11, color: '#64748B' }}>Audio chime on new caller triage</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={stationSettings.audioAlerts}
+                  onChange={(e) => setStationSettings({ ...stationSettings, audioAlerts: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer' }}
+                />
+              </div>
+
+              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A' }}>Auto-Dispatch Critical Distress (SVI &gt; 70)</div>
+                  <div style={{ fontSize: 11, color: '#64748B' }}>Automatic PCR proximity alert</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={stationSettings.autoDispatchCritical}
+                  onChange={(e) => setStationSettings({ ...stationSettings, autoDispatchCritical: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: 'pointer' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                  Portal Working Language
+                </label>
+                <select
+                  value={stationSettings.language}
+                  onChange={(e) => setStationSettings({ ...stationSettings, language: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
+                >
+                  <option value="English">English (Official Court &amp; Police Standard)</option>
+                  <option value="Hindi">हिन्दी (Hindi Standard)</option>
+                  <option value="Marathi">मराठी (Maharashtra State Standard)</option>
+                </select>
+              </div>
+
+              {settingsSaved && (
+                <div style={{ color: '#15803D', fontWeight: 700, fontSize: 12, background: '#DCFCE7', padding: '8px 12px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Check size={14} /> Preferences saved successfully.
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettingsSaved(true);
+                    setTimeout(() => { setSettingsSaved(false); setShowSettingsModal(false); }, 1500);
+                  }}
+                  style={{ flex: 1, background: 'rgb(0, 115, 230)', color: '#FFF', border: 'none', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Save Station Preferences
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help & FAQs Modal */}
+      {showHelpModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+        }}>
+          <div style={{
+            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12,
+            padding: '28px 32px', width: 560, maxWidth: '92vw', maxHeight: '88vh', overflowY: 'auto',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 800, background: '#EFF6FF', color: 'rgb(0, 115, 230)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                  Statutory PoA Act 1989 &amp; SOP Manual
+                </span>
+                <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <HelpCircle size={18} color="rgb(0, 115, 230)" /> Standard Operating Procedure &amp; FAQs
+                </h3>
+              </div>
+              <button onClick={() => setShowHelpModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: 13, marginBottom: 4 }}>
+                  Q1: What is the mandatory investigation timeline under Section 4?
+                </div>
+                <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+                  Under <strong>Section 4 of the SC/ST (PoA) Act, 1989 (Amended 2016)</strong>, an Investigating Officer (not below DySP rank) must complete investigation and file chargesheet within <strong>60 days</strong>. Failure to do so without justified cause is punishable as wilful neglect of duty.
+                </div>
+              </div>
+
+              <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: 13, marginBottom: 4 }}>
+                  Q2: How is victim relief disbursed under Rule 12(4)?
+                </div>
+                <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+                  Rule 12(4) mandates a <strong>3-stage Direct Benefit Transfer (DBT)</strong> directly to victim bank accounts via PFMS:
+                  <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                    <li>Stage 1: 25% on FIR registration / spot verification</li>
+                    <li>Stage 2: 50% on chargesheet submission in Special Court</li>
+                    <li>Stage 3: 25% on conviction / final court judgment</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: 13, marginBottom: 4 }}>
+                  Q3: What does the Pre-Judiciary Cryptographic Seal mean?
+                </div>
+                <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+                  The Superintendent of Police (SP) generates a <strong>SHA-256 cryptographic digital hash</strong> over all case logs, panchnamas, and evidence prior to transmission to the Special Court. This guarantees chain-of-custody integrity against tampering.
+                </div>
+              </div>
+
+              <div style={{ background: '#F0F7FF', padding: 14, borderRadius: 8, border: '1px solid #BFDBFE' }}>
+                <div style={{ fontWeight: 800, color: '#0369A1', fontSize: 13, marginBottom: 4 }}>
+                  National Helpline Atrocities Contact:
+                </div>
+                <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 600 }}>
+                  Toll-Free Helpline: <strong>14566</strong> (24x7 Multi-lingual IVRS Active) &bull; Pune District Nodal Office
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowHelpModal(false)}
+                style={{ marginTop: 6, background: 'rgb(0, 115, 230)', color: '#FFF', border: 'none', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Close Guidance Manual
               </button>
             </div>
           </div>

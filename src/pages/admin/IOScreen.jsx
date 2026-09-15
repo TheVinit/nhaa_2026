@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, MapPin, FolderOpen, Search, ShieldCheck, ArrowRight, User, Phone, CheckCircle2, FileText } from 'lucide-react';
+import CaseSortBar from '../../components/admin/CaseSortBar';
 import { listCases, connectWebSocket, postCaseAction, updateCaseExamine } from '../../services/api';
 import { districtMockData } from '../../data/districtCases';
 import { getSession } from '../../utils/adminAuth';
@@ -63,6 +64,8 @@ export default function IOScreen() {
   const [selectedCase, setSelectedCase] = useState(null);
   const [filterTier, setFilterTier] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortKey, setSortKey] = useState('created_at');
+  const [sortDir, setSortDir] = useState('desc');
 
   const loadData = async () => {
     try {
@@ -103,6 +106,23 @@ export default function IOScreen() {
       if (!matchId && !matchDesc && !matchName && !matchLoc && !matchPhone) return false;
     }
     return true;
+  });
+
+  const TIER_ORDER_IO = { critical: 0, high: 1, moderate: 2, low: 3 };
+  const sortedCases = [...filteredCases].sort((a, b) => {
+    let av, bv;
+    if (sortKey === 'svi_score') {
+      av = Number(a.svi_score ?? 0); bv = Number(b.svi_score ?? 0);
+    } else if (sortKey === 'risk_tier') {
+      av = TIER_ORDER_IO[a.risk_tier] ?? 99; bv = TIER_ORDER_IO[b.risk_tier] ?? 99;
+    } else if (sortKey === 'created_at') {
+      av = new Date(a.created_at || 0).getTime(); bv = new Date(b.created_at || 0).getTime();
+    } else {
+      av = String(a[sortKey] || ''); bv = String(b[sortKey] || '');
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const stats = {
@@ -257,6 +277,13 @@ export default function IOScreen() {
         overflow: 'hidden',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}>
+        <CaseSortBar
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
+          count={sortedCases.length}
+          label="IO Field Case Roster"
+        />
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #CBD5E1', color: '#334155' }}>
@@ -283,7 +310,7 @@ export default function IOScreen() {
                 </td>
               </tr>
             ) : (
-              filteredCases.map((c) => {
+              sortedCases.map((c) => {
                 const sb = STATUS_BADGE[c.status] || STATUS_BADGE.new;
                 return (
                   <tr

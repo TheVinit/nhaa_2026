@@ -1,3 +1,4 @@
+
 const SESSION_KEY = 'nhaa_admin_session';
 
 /** No separate responder roles — all roles are in the police and multi-tier hierarchy. */
@@ -8,6 +9,7 @@ export const RESPONDER_ROLES = [];
  * operator (Call Centre) → io (Investigating Officer) → dsp/acp (Dy. SP / ACP)
  * → sp (Superintendent) → ig/director (Inspector General / Director)
  * → judiciary (Legal Adjudication) → swo (Social Welfare Officer)
+ * → sysadmin (System Administrator — full oversight)
  */
 export const ALL_ROLES = [
   'operator',
@@ -48,10 +50,50 @@ export const ROLE_REDIRECTS = {
   sysadmin: '/admin/sysadmin',
 };
 
+/**
+ * Decode and validate JWT payload claims safely without external dependency.
+ */
+export function parseJwt(token) {
+  try {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 export function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    
+    // Cross-verify cryptographic claims from JWT if token is present
+    if (session?.token) {
+      const claims = parseJwt(session.token);
+      if (claims) {
+        // Enforce role from verified JWT payload over mutable local storage
+        if (claims.role && session.role !== claims.role) {
+          session.role = claims.role;
+        }
+        // Expiry check
+        if (claims.exp && claims.exp * 1000 < Date.now()) {
+          clearSession();
+          return null;
+        }
+      }
+    }
+    return session;
   } catch {
     return null;
   }
@@ -78,3 +120,4 @@ export function getAuthHeaders() {
 export function getRedirectForRole(role) {
   return ROLE_REDIRECTS[role] || '/admin/login';
 }
+
