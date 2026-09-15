@@ -6,6 +6,7 @@ import { getSession } from '../../utils/adminAuth';
 import RiskBadge from '../../components/admin/RiskBadge';
 import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
 import CaseSortBar from '../../components/admin/CaseSortBar';
+import CaseEmailButton from '../../components/admin/CaseEmailButton';
 
 const STATUS_BADGE = {
   new: { bg: '#EFF6FF', fg: '#1E40AF', border: '#BFDBFE', label: 'Field Intake' },
@@ -400,7 +401,8 @@ export default function ACPScreen() {
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <CaseEmailButton caseData={c} compact />
                         <button
                           type="button"
                           onClick={() => setSelectedCase(c)}

@@ -32,10 +32,37 @@ const OFFICERS = [
   { username: 'sp_delhi_01', role: 'sp', name: 'SP Anand Patil', state: 'Maharashtra' },
 ];
 
+const MANAGED_USERS_KEY = 'nhaa_managed_users';
+
+export function getManagedUsers() {
+  try {
+    const users = JSON.parse(localStorage.getItem(MANAGED_USERS_KEY) || '[]');
+    return Array.isArray(users) ? users : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveManagedUsers(users) {
+  localStorage.setItem(MANAGED_USERS_KEY, JSON.stringify(users));
+}
+
 export const MOCK_USERS = OFFICERS.map((u) => ({ ...u, password: 'demo123' }));
 
 export function authenticateMockUser(username, password) {
   const uname = username.trim().toLowerCase();
+  const managedUser = getManagedUsers().find((user) => user.username?.toLowerCase() === uname);
+  if (managedUser?.isActive !== false && managedUser?.password === password) {
+    return {
+      username: managedUser.username,
+      role: managedUser.role,
+      name: managedUser.name,
+      district: managedUser.district || null,
+      state: managedUser.state || null,
+      badge_id: managedUser.badgeId || managedUser.badge_id || null,
+      authSource: 'managed-local',
+    };
+  }
 
   // Sysadmin: accepts Test@1234, Admin@1234, or demo123
   if (uname === 'sysadmin') {

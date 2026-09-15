@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import RiskBadge from './RiskBadge';
+import CaseEmailButton from './CaseEmailButton';
 import { formatCurrentLevel } from '../../utils/caseLevel';
 import { User, MapPin, Phone, Shield, FileText, ArrowUpDown } from 'lucide-react';
 
@@ -132,7 +133,6 @@ export default function CaseTable({ cases, onViewCase }) {
                   Officer Tier{sortIndicator('current_level')}
                 </button>
               </th>
-              <th scope="col" style={{ ...thStyle, textAlign: 'right' }}>Command Action</th>
             </tr>
           </thead>
           <tbody>
@@ -251,9 +251,11 @@ export default function CaseTable({ cases, onViewCase }) {
 
                     {/* Action */}
                     <td style={{ ...tdStyle, textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        onClick={() => onViewCase(c)}
+                      <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                        <CaseEmailButton caseData={c} compact />
+                        <button
+                          type="button"
+                          onClick={() => onViewCase(c)}
                         aria-label={`Examine dossier for case NHAA-${id}`}
                         style={{
                           background: 'rgb(0, 115, 230)',
@@ -275,8 +277,9 @@ export default function CaseTable({ cases, onViewCase }) {
                       >
                         Examine Dossier
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </td>
+                </tr>
                 );
               })
             )}

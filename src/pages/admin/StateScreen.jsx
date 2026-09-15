@@ -12,6 +12,7 @@ import StateComparisonTable from '../../components/admin/StateComparisonTable';
 import RiskBadge from '../../components/admin/RiskBadge';
 import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
 import CaseSortBar from '../../components/admin/CaseSortBar';
+import CaseEmailButton from '../../components/admin/CaseEmailButton';
 import { useLang } from '../../i18n/LangContext';
 import { ADMIN_TRANSLATIONS } from '../../i18n/adminTranslations';
 
@@ -361,9 +362,11 @@ export default function StateScreen() {
                       </button>
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCase(c)}
+                      <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                        <CaseEmailButton caseData={c} compact />
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCase(c)}
                         style={{
                           background: 'rgb(0, 115, 230)',
                           color: '#FFFFFF',
@@ -378,8 +381,9 @@ export default function StateScreen() {
                       >
                         Examine Dossier &rarr;
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </td>
+                </tr>
                 ))}
               </tbody>
             </table>

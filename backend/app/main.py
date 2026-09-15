@@ -11,11 +11,12 @@ from app.routes.stats import router as stats_router
 from app.routes.notifications import router as notifications_router
 from app.routes.agent import router as agent_router
 from app.routes.twilio_webhook import router as twilio_router
-# ── Aditya's auth & admin panel layer ────────────────────────────────────────
+# ── Aditya's auth & admin panel layer ────────────────────────────────
 from app.routes.auth import router as auth_router
 from app.routes.admin_panel import router as admin_panel_router
 from app.routes.evidence import router as evidence_router
 from app.routes.handoffs import router as handoffs_router
+from app.routes.officers import router as officers_router
 from app.config import settings
 
 
@@ -66,6 +67,7 @@ app.include_router(auth_router)                       # /auth/login, /auth/logou
 app.include_router(admin_panel_router, prefix="/api") # /api/cases (JWT-scoped), /api/sla-status, etc.
 app.include_router(evidence_router, prefix="/api")    # /api/cases/{id}/evidence, /api/evidence/...
 app.include_router(handoffs_router, prefix="/api")    # /api/cases/{id}/handoff, /api/cases/{id}/lock, etc.
+app.include_router(officers_router, prefix="/api")    # /api/officers (SysAdmin/super_admin)
 
 # Mount static uploads directory
 Path("uploads").mkdir(parents=True, exist_ok=True)

@@ -25,8 +25,10 @@ export default function GrievanceRegistrationWizard({
   highContrast = false,
   onNavigateTrack
 }) {
-  // Current active step (1 to 5, and 6 for success)
-  const [currentStep, setCurrentStep] = useState(1);
+  // Current active step (0 is the mandatory notice, 1 to 5 are the form, and 6 is success)
+  const [currentStep, setCurrentStep] = useState(0);
+  const [ivrsAcknowledged, setIvrsAcknowledged] = useState(false);
+  const [truthfulDeclaration, setTruthfulDeclaration] = useState(false);
 
   // Step 1: Grievance Registration
   const [grievanceType, setGrievanceType] = useState('FIR');
@@ -111,7 +113,7 @@ export default function GrievanceRegistrationWizard({
   };
 
   const handlePrevStep = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -119,6 +121,12 @@ export default function GrievanceRegistrationWizard({
 
   // Submit and save grievance
   const handleSubmitGrievance = () => {
+    if (!ivrsAcknowledged || !truthfulDeclaration) {
+      setCurrentStep(0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     const newId = `NHAA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     setGeneratedRefId(newId);
 
@@ -130,6 +138,8 @@ export default function GrievanceRegistrationWizard({
         type: grievanceType,
         hasFir: hasFir,
         role: registrationRole,
+        ivrs_acknowledged: ivrsAcknowledged,
+        truthful_declaration: truthfulDeclaration,
         informer: informerData,
         victim: victimData,
         grievance: grievanceData,
@@ -158,6 +168,7 @@ export default function GrievanceRegistrationWizard({
 
   // Steps definition for top stepper
   const steps = [
+    { num: 0, label: 'Important Notice' },
     { num: 1, label: 'Grievance Registration' },
     { num: 2, label: registrationRole === 'informer' ? 'Informer Details' : registrationRole === 'ngo' ? 'NGO Details' : 'Complainant Details' },
     { num: 3, label: 'Victim Details' },
@@ -300,6 +311,127 @@ export default function GrievanceRegistrationWizard({
                 </React.Fragment>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Mandatory IVRS and truthfulness notice */}
+      {currentStep === 0 && (
+        <div
+          style={{
+            background: highContrast ? '#181818' : '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: 14,
+            padding: '36px 44px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
+            <div style={{
+              width: 46, height: 46, borderRadius: 10, flexShrink: 0,
+              background: '#FFF7ED', border: '1px solid #FED7AA',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AlertCircle size={24} color="#EA580C" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, color: highContrast ? '#fff' : '#0F172A', margin: '0 0 4px' }}>
+                Important Notice Before Filing
+              </h2>
+              <p style={{ fontSize: '13.5px', color: highContrast ? '#bbb' : '#64748B', margin: 0, lineHeight: 1.5 }}>
+                Please read both notices carefully. You must accept them before starting the grievance form.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24 }}>
+            <div style={{
+              background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '18px',
+              display: 'flex', gap: 12, alignItems: 'flex-start',
+            }}>
+              <Phone size={22} color="#2563EB" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#1D4ED8', marginBottom: 6 }}>Automated IVRS-assisted call</div>
+                <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.55 }}>
+                  This is an automated IVRS-assisted grievance call. After submission, you may be connected with a human operator for verification or further assistance.
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '18px',
+              display: 'flex', gap: 12, alignItems: 'flex-start',
+            }}>
+              <Scale size={22} color="#DC2626" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#B91C1C', marginBottom: 6 }}>True information only</div>
+                <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.55 }}>
+                  Provide only true information. False or misleading complaints may attract legal action under applicable law, including BNS Sections 217 and 248.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '4px solid #F59E0B',
+            borderRadius: 8, padding: '13px 16px', marginBottom: 22,
+            fontSize: 12.5, color: '#92400E', lineHeight: 1.5,
+          }}>
+            <strong>Declaration requirement:</strong> Both acknowledgements are mandatory. You can return to this notice before final submission if you need to review it again.
+          </div>
+
+          <label style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer',
+            background: ivrsAcknowledged ? '#F0FDF4' : '#F8FAFC',
+            border: `1px solid ${ivrsAcknowledged ? '#86EFAC' : '#CBD5E1'}`,
+            borderRadius: 8, padding: '13px 15px', marginBottom: 12,
+          }}>
+            <input
+              type="checkbox"
+              checked={ivrsAcknowledged}
+              onChange={(e) => setIvrsAcknowledged(e.target.checked)}
+              style={{ width: 18, height: 18, marginTop: 1, accentColor: '#16A34A', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 13, color: '#166534', lineHeight: 1.45 }}>
+              <strong>I understand the IVRS process.</strong> I acknowledge that this is an automated IVRS-assisted grievance call and that I may be connected with a human operator after submission.
+            </span>
+          </label>
+
+          <label style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer',
+            background: truthfulDeclaration ? '#F0FDF4' : '#F8FAFC',
+            border: `1px solid ${truthfulDeclaration ? '#86EFAC' : '#CBD5E1'}`,
+            borderRadius: 8, padding: '13px 15px', marginBottom: 24,
+          }}>
+            <input
+              type="checkbox"
+              checked={truthfulDeclaration}
+              onChange={(e) => setTruthfulDeclaration(e.target.checked)}
+              style={{ width: 18, height: 18, marginTop: 1, accentColor: '#16A34A', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: 13, color: '#166534', lineHeight: 1.45 }}>
+              <strong>I declare that my complaint is truthful.</strong> I understand that false or misleading information may result in legal action under applicable law, including BNS Sections 217 and 248.
+            </span>
+          </label>
+
+          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 20, display: 'flex', justifyContent: 'space-between' }}>
+            <div />
+            <button
+              type="button"
+              onClick={handleNextStep}
+              disabled={!ivrsAcknowledged || !truthfulDeclaration}
+              style={{
+                background: ivrsAcknowledged && truthfulDeclaration ? '#003366' : '#94A3B8',
+                color: '#FFFFFF', border: 'none', borderRadius: 6,
+                padding: '10px 24px', fontSize: '13.5px', fontWeight: 700,
+                cursor: ivrsAcknowledged && truthfulDeclaration ? 'pointer' : 'not-allowed',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                boxShadow: ivrsAcknowledged && truthfulDeclaration ? '0 2px 6px rgba(0,51,102,0.2)' : 'none',
+              }}
+            >
+              <span>I Understand, Continue</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}

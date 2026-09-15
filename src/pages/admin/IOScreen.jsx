@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, MapPin, FolderOpen, Search, ShieldCheck, ArrowRight, User, Phone, CheckCircle2, FileText } from 'lucide-react';
 import CaseSortBar from '../../components/admin/CaseSortBar';
+import CaseEmailButton from '../../components/admin/CaseEmailButton';
 import { listCases, connectWebSocket, postCaseAction, updateCaseExamine } from '../../services/api';
 import { districtMockData } from '../../data/districtCases';
 import { getSession } from '../../utils/adminAuth';
@@ -377,9 +378,11 @@ export default function IOScreen() {
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCase(c)}
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <CaseEmailButton caseData={c} compact />
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCase(c)}
                         style={{
                           background: 'rgb(0, 115, 230)',
                           color: '#FFFFFF',
@@ -397,7 +400,8 @@ export default function IOScreen() {
                       >
                         Field Action &rarr;
                       </button>
-                    </td>
+                    </div>
+                  </td>
                   </tr>
                 );
               })

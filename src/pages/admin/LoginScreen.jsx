@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { ASSETS } from '../../assets';
 import LoginForm from '../../components/admin/LoginForm';
-import { authenticateMockUser } from '../../data/mockUsers';
+import { authenticateMockUser, getManagedUsers } from '../../data/mockUsers';
 import { loginOfficer } from '../../services/api';
 import { getSession, setSession, getRedirectForRole } from '../../utils/adminAuth';
 import { SENIOR_ROLES } from '../../utils/roleGuard';
@@ -115,6 +115,24 @@ const HIERARCHY_TIERS = [
     icon: ShieldCheck,
     isSenior: false,
   },
+];
+
+const MANAGED_LOGIN_TIERS = getManagedUsers()
+  .filter((user) => user.isActive !== false)
+  .map((user) => ({
+    code: 'MANAGED',
+    roleName: user.role,
+    username: user.username,
+    title: user.name,
+    scope: `${user.district || 'Assigned jurisdiction'} • ${user.state || 'NHAA'}`,
+    badgeBg: '#0F766E',
+    icon: ShieldCheck,
+    isSenior: false,
+  }));
+
+const LOGIN_TIERS = [
+  ...HIERARCHY_TIERS,
+  ...MANAGED_LOGIN_TIERS.filter((tier) => !HIERARCHY_TIERS.some((item) => item.username === tier.username)),
 ];
 
 export default function LoginScreen() {
@@ -321,7 +339,7 @@ export default function LoginScreen() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
-              {HIERARCHY_TIERS.map((tier) => {
+              {LOGIN_TIERS.map((tier) => {
                 const isSelected = selectedUser === tier.username;
                 const TierIcon = tier.icon;
                 return (

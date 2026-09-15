@@ -155,16 +155,6 @@ class NotificationOut(BaseModel):
     status: NotificationStatus
 
 
-class OfficerOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    role: OfficerRole
-    district: Optional[str]
-    state: Optional[str]
-
-
 # ── Evidence Schemas ──────────────────────────────────────────────────────────
 
 class EvidenceOut(BaseModel):
@@ -223,4 +213,45 @@ class CaseExamineUpdate(BaseModel):
     exit_report: Optional[str] = None
     case_summary: Optional[str] = None
     incident_description: Optional[str] = None
+
+
+# ── Officer Management Schemas ──────────────────────────────────────────────
+
+class OfficerCreate(BaseModel):
+    name: str
+    role: OfficerRole
+    district: Optional[str] = None
+    state: Optional[str] = None
+    badge_id: Optional[str] = None
+    username: str
+    password: str
+
+
+class OfficerUpdate(BaseModel):
+    name: Optional[str] = None
+    role: Optional[OfficerRole] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    badge_id: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+
+class OfficerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    role: OfficerRole
+    district: Optional[str] = None
+    state: Optional[str] = None
+    badge_id: Optional[str] = None
+    is_active: bool
+    username: Optional[str] = None
+    created_at: datetime
+
+
+class OfficerLoginIn(BaseModel):
+    username: str
+    password: str
 

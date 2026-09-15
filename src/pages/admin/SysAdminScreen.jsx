@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { clearSession, getSession, parseJwt } from '../../utils/adminAuth';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Shield, Eye, AlertTriangle, CheckCircle2, Clock,
   Users, Activity, Mail, LogOut, BarChart3, Lock,
-  ShieldCheck, FileText, TrendingUp, Wifi,
+  ShieldCheck, FileText, TrendingUp, Wifi, Settings, UserPlus, Pencil, Trash2, Search, Copy, RotateCcw,
 } from 'lucide-react';
+import AdminSettingsModal, { getAdminTheme, setAdminTheme } from '../../components/admin/AdminSettingsModal';
+import { createOfficer, deactivateOfficer, listOfficers, updateOfficer } from '../../services/api';
 
 const ALL_DESKS = [
   {
@@ -64,6 +66,35 @@ const ALL_DESKS = [
   },
 ];
 
+const USER_ROLE_OPTIONS = [
+  { value: 'operator', label: 'Call Centre Operator (L-0)' },
+  { value: 'io', label: 'Investigating Officer (L-0.5)' },
+  { value: 'dsp', label: 'Deputy Superintendent of Police (L-1)' },
+  { value: 'acp', label: 'Assistant Commissioner of Police (L-1)' },
+  { value: 'sp', label: 'Superintendent of Police (L-2)' },
+  { value: 'ig', label: 'Inspector General of Police (L-3)' },
+  { value: 'director', label: 'Director, Central Oversight (L-3+)' },
+  { value: 'judiciary', label: 'Judiciary / Special Court (L-4)' },
+  { value: 'swo', label: 'Social Welfare Officer (L-5)' },
+  { value: 'sysadmin', label: 'System Administrator (SYS)' },
+  { value: 'super_admin', label: 'Super Administrator (SYS+)' },
+];
+
+const DEFAULT_USER_ROWS = [
+  { id: 'seed-operator', name: 'Priya Kadam', role: 'operator', mobile: '9876543210', username: 'operator', district: 'Pune District', state: 'Maharashtra', badgeId: 'L0-001', isActive: true, source: 'System' },
+  { id: 'seed-io', name: 'Vikram Shinde', role: 'io', mobile: '9876543211', username: 'io', district: 'Pune District', state: 'Maharashtra', badgeId: 'L05-001', isActive: true, source: 'System' },
+  { id: 'seed-dsp', name: 'Rajesh Shinde', role: 'dsp', mobile: '9876543212', username: 'dsp', district: 'Pune District', state: 'Maharashtra', badgeId: 'L1-001', isActive: true, source: 'System' },
+  { id: 'seed-acp', name: 'Sanjay More', role: 'acp', mobile: '9876543213', username: 'acp', district: 'Pune District', state: 'Maharashtra', badgeId: 'L1-002', isActive: true, source: 'System' },
+  { id: 'seed-sp', name: 'Anand Patil', role: 'sp', mobile: '9876543214', username: 'sp', district: 'Pune Rural', state: 'Maharashtra', badgeId: 'L2-001', isActive: true, source: 'System' },
+  { id: 'seed-ig', name: 'Priya Kulkarni', role: 'ig', mobile: '9876543215', username: 'ig', district: '', state: 'Maharashtra', badgeId: 'L3-001', isActive: true, source: 'System' },
+  { id: 'seed-director', name: 'K. S. Deshmukh', role: 'director', mobile: '9876543216', username: 'director', district: '', state: 'All India', badgeId: 'L3P-001', isActive: true, source: 'System' },
+  { id: 'seed-judiciary', name: 'M. L. Gaikwad', role: 'judiciary', mobile: '9876543217', username: 'judiciary', district: 'Pune', state: 'Maharashtra', badgeId: 'L4-001', isActive: true, source: 'System' },
+  { id: 'seed-swo', name: 'Anita Pawar', role: 'swo', mobile: '9876543218', username: 'swo', district: 'Pune District', state: 'Maharashtra', badgeId: 'L5-001', isActive: true, source: 'System' },
+  { id: 'seed-sysadmin', name: 'NHAA Central Command', role: 'sysadmin', mobile: '14566', username: 'sysadmin', district: 'National Command', state: 'All India', badgeId: 'SYS-001', isActive: true, source: 'System' },
+];
+
+const MANAGED_USERS_KEY = 'nhaa_managed_users';
+
 const AUDIT_LOG = [
   { time: '14:31:05', user: 'DSP Rajesh Shinde', action: 'Escalated case #C-2026-0891 to SP desk', level: 'warn' },
   { time: '14:28:44', user: 'Operator Priya Kadam', action: 'New case intake — caller 98XXXXXXXX, risk tier: HIGH', level: 'critical' },
@@ -84,18 +115,105 @@ const LEVEL_STYLE = {
   critical: { bg: '#FEF2F2', color: '#991B1B', dot: '#EF4444', label: 'CRITICAL' },
 };
 
+function readManagedUsers() {
+  try {
+    const users = JSON.parse(localStorage.getItem(MANAGED_USERS_KEY) || '[]');
+    return Array.isArray(users) ? users : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeManagedUsers(users) {
+  localStorage.setItem(MANAGED_USERS_KEY, JSON.stringify(users));
+}
+
+function generatePassword() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const numbers = '23456789';
+  const symbols = '@#$%&*?';
+  const pick = (source) => source[Math.floor(Math.random() * source.length)];
+  return `${pick(letters)}${pick(letters)}${pick(numbers)}${pick(symbols)}${pick(letters)}${pick(numbers)}${pick(letters)}${pick(symbols)}${pick(letters)}${pick(numbers)}`;
+}
+
+function getRoleLabel(role) {
+  return USER_ROLE_OPTIONS.find((option) => option.value === role)?.label || role;
+}
+
 const TOTAL_CASES   = ALL_DESKS.reduce((a, d) => a + d.cases, 0);
 const TOTAL_PENDING = ALL_DESKS.reduce((a, d) => a + d.pending, 0);
 const TOTAL_ALERTS  = ALL_DESKS.reduce((a, d) => a + d.alerts, 0);
 const TOTAL_ACTIVE  = ALL_DESKS.reduce((a, d) => a + d.active, 0);
 
-export default function SysAdminScreen() {
+export default function SysAdminScreen({ embedded = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const session = getSession();
   const jwtClaims = session?.token ? parseJwt(session.token) : null;
+  const searchParams = new URLSearchParams(location.search);
+  const currentView = searchParams.get('view') || 'overview';
+  const showOfficerManagement = currentView === 'officers';
+
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [emailTo, setEmailTo] = useState('monitoring@nhaa.gov.in');
   const [emailSent, setEmailSent] = useState(false);
+  const [theme, setTheme] = useState(() => getAdminTheme());
+  const [stationSettings, setStationSettings] = useState({
+    stationName: 'NHAA Central Command (SYS)',
+    audioAlerts: true,
+    autoDispatchCritical: true,
+    language: 'English',
+  });
+  const [managedUsers, setManagedUsers] = useState(() => readManagedUsers());
+  const [apiUsers, setApiUsers] = useState([]);
+  const [apiUsersLoading, setApiUsersLoading] = useState(false);
+  const [userForm, setUserForm] = useState({
+    name: '',
+    mobile: '',
+    role: 'io',
+    username: '',
+    password: '',
+    district: 'Pune District',
+    state: 'Maharashtra',
+    badgeId: '',
+    isActive: true,
+  });
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editingUserSource, setEditingUserSource] = useState('');
+  const [userMessage, setUserMessage] = useState('');
+  const [userError, setUserError] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [userFilter, setUserFilter] = useState('');
+
+  useEffect(() => {
+    document.documentElement.dataset.adminTheme = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    if (!session?.token) return;
+    let active = true;
+    setApiUsersLoading(true);
+    listOfficers()
+      .then((users) => {
+        if (active && Array.isArray(users)) setApiUsers(users);
+      })
+      .catch(() => {
+        if (active) setApiUsers([]);
+      })
+      .finally(() => {
+        if (active) setApiUsersLoading(false);
+      });
+    return () => { active = false; };
+  }, [session?.token]);
+
+  const toggleTheme = () => {
+    setTheme((previous) => {
+      const next = previous === 'dark' ? 'light' : 'dark';
+      setAdminTheme(next);
+      return next;
+    });
+  };
 
   const handleLogout = () => {
     clearSession();
@@ -116,6 +234,241 @@ export default function SysAdminScreen() {
     setTimeout(() => { setEmailSent(false); setShowEmailModal(false); }, 2000);
   };
 
+  const handleUserFieldChange = (field, value) => {
+    setUserForm((current) => ({
+      ...current,
+      [field]: field === 'mobile' ? value.replace(/\D/g, '').slice(0, 10) : value,
+    }));
+    setUserError('');
+  };
+
+  const handleSelectUser = (user) => {
+    setUserForm({
+      name: user.name || '',
+      mobile: user.mobile || '',
+      role: user.role || 'io',
+      username: user.username || '',
+      password: '',
+      district: user.district || '',
+      state: user.state || '',
+      badgeId: user.badgeId || '',
+      isActive: Boolean(user.isActive),
+    });
+    setEditingUserId(user.id);
+    setEditingUserSource(user.source || 'System');
+    setGeneratedPassword('');
+    setUserMessage('');
+    setUserError('');
+  };
+
+  const handleSaveUser = async () => {
+    const name = userForm.name.trim();
+    const mobile = userForm.mobile.trim();
+    const role = userForm.role;
+    const username = userForm.username.trim().toLowerCase();
+    const password = userForm.password;
+    const district = userForm.district.trim();
+    const state = userForm.state.trim();
+    const badgeId = userForm.badgeId.trim();
+
+    if (!name || !mobile || !role || !username || !password) {
+      setUserError('Name, mobile number, position, login ID, and password are required.');
+      return;
+    }
+    if (mobile.length !== 10) {
+      setUserError('Mobile number must contain exactly 10 digits.');
+      return;
+    }
+    if (!/^[a-z0-9._-]+$/.test(username)) {
+      setUserError('Login ID may contain letters, numbers, dots, underscores, and hyphens only.');
+      return;
+    }
+    if (password.length < 6) {
+      setUserError('Password must contain at least 6 characters.');
+      return;
+    }
+
+    const existingByUsername = allUsers.find((user) => user.username?.toLowerCase() === username);
+    if (existingByUsername && (!editingUserId || existingByUsername.id !== editingUserId)) {
+      setUserError('This login ID is already assigned to another user.');
+      return;
+    }
+
+    const apiPayload = {
+      name,
+      role,
+      district: district || null,
+      state: state || null,
+      badge_id: badgeId || null,
+      username,
+      password,
+    };
+    const isApiEdit = editingUserSource === 'API' && typeof editingUserId === 'number';
+    const isManagedEdit = managedUsers.some((user) => user.id === editingUserId);
+
+    try {
+      const saved = isApiEdit
+        ? await updateOfficer(editingUserId, { ...apiPayload, ...(password ? { password } : {}) })
+        : await createOfficer(apiPayload);
+      const normalized = {
+        ...saved,
+        source: 'API',
+        mobile: '',
+        password: password || '',
+        isActive: saved.is_active,
+      };
+      setApiUsers((current) => [
+        ...current.filter((user) => user.id !== saved.id && user.username?.toLowerCase() !== username),
+        normalized,
+      ]);
+      setGeneratedPassword(password);
+      setUserMessage(`${username} saved to the central officer directory.`);
+      setUserError('');
+      setUserForm({
+        name: '',
+        mobile: '',
+        role: 'io',
+        username: '',
+        password: '',
+        district: 'Pune District',
+        state: 'Maharashtra',
+        badgeId: '',
+        isActive: true,
+      });
+      setEditingUserId(null);
+      setEditingUserSource('');
+    } catch {
+      const nextUsers = managedUsers.filter((user) => user.id !== editingUserId);
+      const savedUser = {
+        id: editingUserId?.startsWith('seed-') ? `managed-${username}` : (editingUserId || `managed-${Date.now()}`),
+        name,
+        mobile,
+        role,
+        username,
+        password,
+        district,
+        state,
+        badgeId,
+        isActive: userForm.isActive,
+        source: 'Managed',
+        updatedAt: new Date().toISOString(),
+      };
+      nextUsers.push(savedUser);
+      setManagedUsers(nextUsers);
+      writeManagedUsers(nextUsers);
+      setGeneratedPassword(password);
+      setUserMessage(isManagedEdit || editingUserId ? `${username} updated locally for offline use.` : `${username} created locally for offline use.`);
+      setUserError('');
+      setUserForm({
+        name: '',
+        mobile: '',
+        role: 'io',
+        username: '',
+        password: '',
+        district: 'Pune District',
+        state: 'Maharashtra',
+        badgeId: '',
+        isActive: true,
+      });
+      setEditingUserId(null);
+      setEditingUserSource('');
+    }
+  };
+
+  const handleResetUserForm = () => {
+    setUserForm({
+      name: '',
+      mobile: '',
+      role: 'io',
+      username: '',
+      password: '',
+      district: 'Pune District',
+      state: 'Maharashtra',
+      badgeId: '',
+      isActive: true,
+    });
+    setEditingUserId(null);
+    setEditingUserSource('');
+    setGeneratedPassword('');
+    setUserMessage('');
+    setUserError('');
+  };
+
+  const handleToggleUserActive = async (user) => {
+    if (user.source === 'API' && session?.token) {
+      try {
+        const updated = await deactivateOfficer(user.id);
+        setApiUsers((current) => current.map((item) => item.id === user.id ? { ...item, ...updated, source: 'API', isActive: updated.is_active } : item));
+        setUserMessage(`${user.username} is now inactive.`);
+        return;
+      } catch {
+        setUserError('Unable to update account status on the server; saved locally instead.');
+      }
+    }
+    const nextUsers = managedUsers.filter((item) => item.id !== user.id);
+    nextUsers.push({ ...user, isActive: !user.isActive, updatedAt: new Date().toISOString() });
+    setManagedUsers(nextUsers);
+    writeManagedUsers(nextUsers);
+    setUserMessage(`${user.username} is now ${!user.isActive ? 'active' : 'inactive'}.`);
+  };
+
+  const handleDeleteUser = (user) => {
+    if (user.source === 'System' || user.source === 'API') return;
+    const nextUsers = managedUsers.filter((item) => item.id !== user.id);
+    setManagedUsers(nextUsers);
+    writeManagedUsers(nextUsers);
+    if (editingUserId === user.id) handleResetUserForm();
+    setUserMessage(`User ${user.username} removed.`);
+  };
+
+  const handleResetUserPassword = async (user) => {
+    const newPassword = generatePassword();
+    if (user.source === 'API' && session?.token) {
+      try {
+        const updated = await updateOfficer(user.id, { password: newPassword });
+        setApiUsers((current) => current.map((item) => item.id === user.id ? { ...item, ...updated, source: 'API', password: newPassword } : item));
+        setGeneratedPassword(newPassword);
+        setUserMessage(`Temporary password generated for ${user.username}.`);
+        return;
+      } catch {
+        setUserError('Unable to reset the server password; generated a local temporary password instead.');
+      }
+    }
+    const nextUsers = managedUsers.filter((item) => item.id !== user.id);
+    nextUsers.push({ ...user, password: newPassword, updatedAt: new Date().toISOString() });
+    setManagedUsers(nextUsers);
+    writeManagedUsers(nextUsers);
+    setGeneratedPassword(newPassword);
+    setUserMessage(`Temporary password generated for ${user.username}.`);
+  };
+
+  const handleCopyGeneratedPassword = () => {
+    const value = generatedPassword || userForm.password;
+    if (!value) return;
+    navigator.clipboard?.writeText(value);
+    setUserMessage('Password copied to clipboard.');
+  };
+
+  const managedByUsername = new Map(managedUsers.map((user) => [user.username?.toLowerCase(), user]));
+  const apiByUsername = new Map(apiUsers.map((user) => [user.username?.toLowerCase(), user]));
+  const allUsers = [
+    ...DEFAULT_USER_ROWS.map((user) => apiByUsername.get(user.username.toLowerCase()) || managedByUsername.get(user.username.toLowerCase()) || user),
+    ...managedUsers.filter((user) => !DEFAULT_USER_ROWS.some((defaultUser) => defaultUser.username.toLowerCase() === user.username.toLowerCase()) && !apiByUsername.has(user.username.toLowerCase())),
+    ...apiUsers.filter((user) => !DEFAULT_USER_ROWS.some((defaultUser) => defaultUser.username.toLowerCase() === user.username.toLowerCase()) && !managedByUsername.has(user.username.toLowerCase())),
+  ].map((user) => ({
+    ...user,
+    source: user.source || (apiUsers.some((apiUser) => apiUser.username?.toLowerCase() === user.username?.toLowerCase()) ? 'API' : user.id?.toString().startsWith('managed-') ? 'Managed' : 'System'),
+    mobile: user.mobile || '',
+    password: user.password || '',
+    isActive: user.isActive ?? user.is_active ?? true,
+  }));
+  const filteredUsers = allUsers.filter((user) => {
+    const query = userFilter.trim().toLowerCase();
+    if (!query) return true;
+    return [user.name, user.username, user.role, user.district, user.state, user.badgeId]
+      .some((value) => String(value || '').toLowerCase().includes(query));
+  });
+
   const STAT_CARDS = [
     { label: 'Total Cases',   value: TOTAL_CASES,   icon: FileText,      color: 'rgb(0, 115, 230)', bg: '#EFF6FF', border: '#DBEAFE' },
     { label: 'Active Now',    value: TOTAL_ACTIVE,  icon: Activity,      color: '#059669',           bg: '#F0FDF4', border: '#BBF7D0' },
@@ -124,14 +477,17 @@ export default function SysAdminScreen() {
   ];
 
   return (
-    <div style={{
-      minHeight: '100vh',
+    <div
+      className={theme === 'dark' ? 'admin-theme-dark' : ''}
+      style={{
+        minHeight: '100vh',
       background: '#F8FAFC',
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       color: '#0F172A',
     }}>
-      {/* Top Utility Bar — matches AdminLayout */}
-      <div style={{
+      {!embedded && (
+        <>
+        <div style={{
         background: '#0F1E36',
         color: '#FFFFFF',
         fontSize: 12,
@@ -167,7 +523,6 @@ export default function SysAdminScreen() {
         </div>
       </div>
 
-      {/* Main Header — matches AdminLayout header bar style */}
       <header style={{
         background: '#FFFFFF',
         borderBottom: '1px solid #E2E8F0',
@@ -199,7 +554,7 @@ export default function SysAdminScreen() {
                 SYSTEM ADMINISTRATOR
               </span>
               <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
-                Read-Only Monitoring Console
+                Central Administration Console
               </span>
             </div>
             <div style={{ fontSize: 15, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1.25 }}>
@@ -217,7 +572,7 @@ export default function SysAdminScreen() {
             fontSize: 11, fontWeight: 700, color: '#475569',
           }}>
             <Lock size={12} color="#64748B" />
-            Monitoring Access Only
+            Central Administration
           </div>
 
           {/* Officer badge */}
@@ -242,6 +597,21 @@ export default function SysAdminScreen() {
               </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowSettingsModal(true)}
+            style={{
+              background: '#F8FAFC', color: '#475569',
+              fontSize: 11, fontWeight: 700,
+              padding: '6px 12px', borderRadius: 5,
+              border: '1.5px solid #CBD5E1', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <Settings size={13} />
+            Settings
+          </button>
 
           <button
             type="button"
@@ -274,6 +644,8 @@ export default function SysAdminScreen() {
           </button>
         </div>
       </header>
+      </>
+      )}
 
       {/* Page Body */}
       <div style={{ padding: '28px', maxWidth: 1280, margin: '0 auto' }}>
@@ -296,11 +668,176 @@ export default function SysAdminScreen() {
               Monitoring Access Only —&nbsp;
             </span>
             <span style={{ fontSize: 12, color: '#92400E' }}>
-              As System Administrator, you have read-only oversight of all 9 officer desks.
-              You can view case data, audit logs, and system health, but you cannot log in to or act on behalf of any officer desk.
+              As System Administrator, you have central oversight of all officer desks and the officer directory.
+              You can monitor case data, audit logs, system health, and manage officer accounts from this console.
             </span>
           </div>
         </div>
+
+        {embedded && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 16, flexWrap: 'wrap', marginBottom: 24,
+          }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>System Actions</div>
+              <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 3 }}>Central controls for the officer directory and command console.</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setShowEmailModal(true)} style={{ background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD', borderRadius: 6, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Mail size={14} /> Email Report
+              </button>
+              <button type="button" onClick={() => setShowSettingsModal(true)} style={{ background: '#F8FAFC', color: '#475569', border: '1px solid #CBD5E1', borderRadius: 6, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Settings size={14} /> Settings
+              </button>
+              <button type="button" onClick={handleLogout} style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA', borderRadius: 6, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <LogOut size={14} /> Sign Out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showOfficerManagement && (
+        <div style={{
+          background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12,
+          padding: '22px', marginBottom: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Users size={21} color="rgb(0, 115, 230)" />
+              </div>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 900, color: '#0F172A', margin: 0 }}>Officer Directory &amp; User Management</h2>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '3px 0 0' }}>Create hierarchy accounts, assign positions, and manage secure login access.</p>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: apiUsersLoading ? '#B45309' : '#166534', background: apiUsersLoading ? '#FFFBEB' : '#F0FDF4', border: `1px solid ${apiUsersLoading ? '#FDE68A' : '#BBF7D0'}`, padding: '4px 10px', borderRadius: 999 }}>
+              {apiUsersLoading ? 'SYNCING DIRECTORY' : `${allUsers.length} ACCOUNTS`}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{editingUserId ? 'Edit Officer Account' : 'Create Officer Account'}</div>
+                  <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{editingUserId ? `Editing ${userForm.username || 'selected account'}` : 'Enter the officer details and generate a login.'}</div>
+                </div>
+                <UserPlus size={18} color="#2563EB" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Full Name <span style={{ color: '#EF4444' }}>*</span></label>
+                  <input value={userForm.name} onChange={(e) => handleUserFieldChange('name', e.target.value)} placeholder="Officer full name" style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Mobile Number <span style={{ color: '#EF4444' }}>*</span></label>
+                  <input value={userForm.mobile} onChange={(e) => handleUserFieldChange('mobile', e.target.value)} placeholder="10-digit mobile" maxLength={10} style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Position / Role <span style={{ color: '#EF4444' }}>*</span></label>
+                  <select value={userForm.role} onChange={(e) => handleUserFieldChange('role', e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }}>
+                    {USER_ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Login ID <span style={{ color: '#EF4444' }}>*</span></label>
+                  <input value={userForm.username} onChange={(e) => handleUserFieldChange('username', e.target.value)} placeholder="e.g. io_pune_02" style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Password <span style={{ color: '#EF4444' }}>*</span></label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input type="password" value={userForm.password} onChange={(e) => handleUserFieldChange('password', e.target.value)} placeholder="Minimum 6 characters" style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                    <button type="button" onClick={() => { const generated = generatePassword(); handleUserFieldChange('password', generated); setGeneratedPassword(generated); }} title="Generate secure password" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', borderRadius: 6, padding: '0 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Generate</button>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Badge / Employee ID</label>
+                  <input value={userForm.badgeId} onChange={(e) => handleUserFieldChange('badgeId', e.target.value)} placeholder="Optional official ID" style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>District</label>
+                  <input value={userForm.district} onChange={(e) => handleUserFieldChange('district', e.target.value)} placeholder="District or division" style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>State</label>
+                  <input value={userForm.state} onChange={(e) => handleUserFieldChange('state', e.target.value)} placeholder="State or All India" style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', fontSize: 12.5, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 700, color: '#166534', paddingTop: 22 }}>
+                  <input type="checkbox" checked={userForm.isActive} onChange={(e) => handleUserFieldChange('isActive', e.target.checked)} style={{ width: 16, height: 16, accentColor: '#16A34A', cursor: 'pointer' }} /> Account active
+                </label>
+              </div>
+
+              {userError && <div role="alert" style={{ marginTop: 12, background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', borderRadius: 6, padding: '9px 11px', fontSize: 11.5, fontWeight: 700 }}>{userError}</div>}
+              {userMessage && <div role="status" style={{ marginTop: 12, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#166534', borderRadius: 6, padding: '9px 11px', fontSize: 11.5, fontWeight: 700 }}>{userMessage}</div>}
+              {generatedPassword && (
+                <div style={{ marginTop: 12, background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, padding: '9px 11px', fontSize: 11.5, color: '#9A3412', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span>Temporary password: <strong style={{ fontFamily: 'monospace' }}>{generatedPassword}</strong></span>
+                  <button type="button" onClick={handleCopyGeneratedPassword} style={{ background: '#FFFFFF', border: '1px solid #FED7AA', color: '#C2410C', borderRadius: 5, padding: '4px 8px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <Copy size={11} /> Copy
+                  </button>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button type="button" onClick={handleSaveUser} style={{ flex: 1, background: '#003366', color: '#FFFFFF', border: 'none', borderRadius: 6, padding: '10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <ShieldCheck size={14} /> {editingUserId ? 'Save Changes' : 'Create Account'}
+                </button>
+                <button type="button" onClick={handleResetUserForm} style={{ background: '#FFFFFF', color: '#475569', border: '1px solid #CBD5E1', borderRadius: 6, padding: '10px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Reset</button>
+              </div>
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <Search size={14} color="#64748B" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+                  <input value={userFilter} onChange={(e) => setUserFilter(e.target.value)} placeholder="Search name, login ID, role, district..." style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px 9px 30px', fontSize: 12, border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF', color: '#0F172A', outline: 'none' }} />
+                </div>
+                <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700, whiteSpace: 'nowrap' }}>{filteredUsers.length} shown</span>
+              </div>
+              <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 10 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 760 }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                      {['Officer', 'Position', 'Mobile', 'Login ID', 'Jurisdiction', 'Badge', 'Status', 'Actions'].map((heading) => (
+                        <th key={heading} style={{ padding: '9px 10px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{heading}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((user) => (
+                      <tr key={`${user.source || 'System'}-${user.username || user.id}`} style={{ borderBottom: '1px solid #F1F5F9', background: '#FFFFFF' }}>
+                        <td style={{ padding: '9px 10px' }}><div style={{ fontWeight: 800, color: '#0F172A' }}>{user.name || '—'}</div><div style={{ fontSize: 10, color: '#94A3B8' }}>{user.source || 'System'}</div></td>
+                        <td style={{ padding: '9px 10px', color: '#334155' }}>{getRoleLabel(user.role)}</td>
+                        <td style={{ padding: '9px 10px', color: '#475569', fontFamily: 'monospace' }}>{user.mobile || '—'}</td>
+                        <td style={{ padding: '9px 10px', color: '#0369A1', fontWeight: 700, fontFamily: 'monospace' }}>{user.username || '—'}</td>
+                        <td style={{ padding: '9px 10px', color: '#64748B' }}>{[user.district, user.state].filter(Boolean).join(', ') || '—'}</td>
+                        <td style={{ padding: '9px 10px', color: '#475569', fontFamily: 'monospace' }}>{user.badgeId || '—'}</td>
+                        <td style={{ padding: '9px 10px' }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 7px', borderRadius: 999, background: user.isActive ? '#F0FDF4' : '#FEF2F2', color: user.isActive ? '#166534' : '#B91C1C', border: `1px solid ${user.isActive ? '#BBF7D0' : '#FECACA'}` }}>
+                            {user.isActive ? 'ACTIVE' : 'INACTIVE'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '9px 10px' }}>
+                          <div style={{ display: 'flex', gap: 5 }}>
+                            <button type="button" onClick={() => handleSelectUser(user)} title="Edit account" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', borderRadius: 5, padding: '4px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><Pencil size={12} /></button>
+                            <button type="button" onClick={() => handleToggleUserActive(user)} title={user.isActive ? 'Deactivate account' : 'Activate account'} style={{ background: user.isActive ? '#F0FDF4' : '#FEF2F2', color: user.isActive ? '#166534' : '#B91C1C', border: `1px solid ${user.isActive ? '#BBF7D0' : '#FECACA'}`, borderRadius: 5, padding: '4px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><CheckCircle2 size={12} /></button>
+                            <button type="button" onClick={() => handleResetUserPassword(user)} title="Generate temporary password" style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA', borderRadius: 5, padding: '4px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><RotateCcw size={12} /></button>
+                            <button type="button" onClick={() => handleDeleteUser(user)} disabled={user.source === 'System' || user.source === 'API'} title={user.source === 'System' || user.source === 'API' ? 'Use deactivate for directory accounts' : 'Remove managed account'} style={{ background: user.source === 'System' || user.source === 'API' ? '#F1F5F9' : '#FEF2F2', color: user.source === 'System' || user.source === 'API' ? '#CBD5E1' : '#B91C1C', border: `1px solid ${user.source === 'System' || user.source === 'API' ? '#E2E8F0' : '#FECACA'}`, borderRadius: 5, padding: '4px 6px', cursor: user.source === 'System' || user.source === 'API' ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center' }}><Trash2 size={12} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {!filteredUsers.length && <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: '#64748B', fontSize: 12 }}>No officer accounts match this search.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
 
         {/* Top Summary Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
@@ -669,6 +1206,19 @@ export default function SysAdminScreen() {
           </div>
         </div>
       </div>
+
+      {showSettingsModal && (
+        <AdminSettingsModal
+          session={session}
+          roleLabel="System Administrator"
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onClose={() => setShowSettingsModal(false)}
+          onLogout={handleLogout}
+          stationSettings={stationSettings}
+          setStationSettings={setStationSettings}
+        />
+      )}
 
       {/* Email Modal */}
       {showEmailModal && (

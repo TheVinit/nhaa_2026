@@ -27,6 +27,7 @@ import RiskBadge from '../../components/admin/RiskBadge';
 import SLACountdown from '../../components/admin/SLACountdown';
 import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
 import CaseSortBar from '../../components/admin/CaseSortBar';
+import CaseEmailButton from '../../components/admin/CaseEmailButton';
 import { useLang } from '../../i18n/LangContext';
 import { ADMIN_TRANSLATIONS } from '../../i18n/adminTranslations';
 
@@ -1231,6 +1232,7 @@ export default function DistrictScreen() {
                           {/* 8. Senior Officer Actions */}
                           <td style={{ padding: '14px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                              <CaseEmailButton caseData={c} compact />
                               <button
                                 type="button"
                                 onClick={() => handleViewCase(c)}

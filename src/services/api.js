@@ -50,6 +50,22 @@ export async function loginOfficer(username, password) {
   return resp.json();
 }
 
+export async function listOfficers() {
+  return request('/officers/');
+}
+
+export async function createOfficer(payload) {
+  return request('/officers/', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updateOfficer(officerId, payload) {
+  return request(`/officers/${officerId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+}
+
+export async function deactivateOfficer(officerId) {
+  return request(`/officers/${officerId}/deactivate`, { method: 'PATCH' });
+}
+
 /**
  * POST /cases — create a case from any channel.
  */

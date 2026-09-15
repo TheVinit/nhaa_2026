@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Activity, PhoneCall, Route, ShieldCheck, Sparkles, Video } from 'lucide-react';
 import { ASSETS } from '../../assets';
 import {
   SIDE_MENU,
@@ -75,6 +76,128 @@ function EventCard({ item }) {
         </Link>
       </div>
     </article>
+  );
+}
+
+const IVRS_VIDEO_URL = '';
+const ivrsVideoEmbedUrl = (() => {
+  if (!IVRS_VIDEO_URL) return '';
+  try {
+    const parsed = new URL(IVRS_VIDEO_URL);
+    if (parsed.hostname.includes('youtube.com')) {
+      const videoId = parsed.searchParams.get('v');
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+    }
+    if (parsed.hostname === 'youtu.be') {
+      return `https://www.youtube.com/embed/${parsed.pathname.replace(/^\//, '')}`;
+    }
+    return IVRS_VIDEO_URL;
+  } catch {
+    return '';
+  }
+})();
+const hasIvrsVideo = Boolean(ivrsVideoEmbedUrl);
+
+function AiTriageShowcase() {
+  return (
+    <section aria-labelledby="ai-triage-title" style={{ marginBottom: 48 }}>
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #003366 0%, #0073E6 100%)',
+          color: '#fff',
+          boxShadow: '0 18px 40px -18px rgba(0, 51, 102, 0.28)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+        }}
+      >
+        <div aria-hidden="true" style={{ position: 'absolute', width: 280, height: 280, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', filter: 'blur(4px)', top: -150, right: -80 }} />
+        <div aria-hidden="true" style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.16)', filter: 'blur(8px)', bottom: -120, left: 120 }} />
+        <div style={{ position: 'relative', padding: 30, display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', gap: 28, alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999, padding: '6px 12px', fontSize: 11, fontWeight: 800, letterSpacing: 0.08, textTransform: 'uppercase' }}>
+              <Sparkles size={14} /> AI-enabled IVRS triage
+            </div>
+            <h2 id="ai-triage-title" style={{ fontSize: 28, fontWeight: 850, lineHeight: 1.18, margin: '18px 0 14px', letterSpacing: -0.5 }}>
+              AI-Powered Real-Time Trauma &amp; Risk Triage
+            </h2>
+            <p style={{ fontSize: 15, lineHeight: 1.75, margin: 0, color: 'rgba(255,255,255,0.9)', maxWidth: 620 }}>
+              Before any human answers, our AI listens — detecting trauma, fear, and risk from voice and text in real time. Every caller is instantly scored, routed to the right officer, and given a trackable docket number — so no cry for help is ever lost in a queue.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 22 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '7px 12px', fontSize: 12, fontWeight: 700 }}>
+                <PhoneCall size={15} /> 14566 IVRS
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '7px 12px', fontSize: 12, fontWeight: 700 }}>
+                <Activity size={15} /> Real-time scoring
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '7px 12px', fontSize: 12, fontWeight: 700 }}>
+                <Route size={15} /> Officer routing
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '7px 12px', fontSize: 12, fontWeight: 700 }}>
+                <ShieldCheck size={15} /> Docket tracking
+              </span>
+            </div>
+            <div style={{ marginTop: 22, fontSize: 13, color: 'rgba(255,255,255,0.82)' }}>
+              Developed by <strong style={{ color: '#fff' }}>Team Asterisk</strong>
+            </div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: 22, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <Video size={21} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>IVRS Demo</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>Short solution video</div>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.06, color: '#FDE68A', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(253,230,138,0.35)', borderRadius: 999, padding: '4px 8px' }}>
+                COMING SOON
+              </span>
+            </div>
+            {hasIvrsVideo ? (
+              <div style={{ overflow: 'hidden', borderRadius: 14, border: '1px solid rgba(255,255,255,0.22)', background: '#000' }}>
+                <iframe
+                  src={ivrsVideoEmbedUrl}
+                  title="Team Asterisk IVRS demonstration video"
+                  width="100%"
+                  height="220"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ display: 'block', border: 0 }}
+                />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 13, minHeight: 150, padding: 20, borderRadius: 14, border: '1px dashed rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.12)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', flexShrink: 0 }}>
+                  <Video size={22} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800 }}>Video link will be added here</div>
+                  <div style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>Paste the YouTube URL after the IVRS video shoot.</div>
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 16 }}>
+              <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 6px' }}>
+                <div style={{ fontSize: 18, fontWeight: 900 }}>AI</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>Listen</div>
+              </div>
+              <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 6px' }}>
+                <div style={{ fontSize: 18, fontWeight: 900 }}>Risk</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>Score</div>
+              </div>
+              <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 6px' }}>
+                <div style={{ fontSize: 18, fontWeight: 900 }}>ID</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>Track</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -194,6 +317,8 @@ export default function NhaaOrganisationPage() {
         </nav>
 
         <div>
+          <AiTriageShowcase />
+
           {/* About the Scheme */}
           <section id="aboutCommissionSec" style={{ marginBottom: 48 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>

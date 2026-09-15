@@ -14,6 +14,7 @@ import {
   LogOut,
   CheckCircle2,
   ShieldCheck,
+  Users,
   LayoutDashboard,
   Clock as ClockIcon,
   Settings,
@@ -27,6 +28,7 @@ import { ASSETS } from '../../assets';
 import { getSession, clearSession, ROLE_LABELS } from '../../utils/adminAuth';
 import { useLang } from '../../i18n/LangContext';
 import { ADMIN_TRANSLATIONS } from '../../i18n/adminTranslations';
+import AdminSettingsModal, { getAdminTheme, setAdminTheme } from './AdminSettingsModal';
 
 const RANK_CONFIG = {
   operator:  { code: 'L-0',   label: 'Call Centre Operator', jurisdiction: 'Triage Queue & Intake', Icon: Headphones },
@@ -156,7 +158,19 @@ export default function AdminLayout({ children }) {
     autoDispatchCritical: true,
     language: 'English',
   });
-  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [theme, setTheme] = useState(() => getAdminTheme());
+
+  useEffect(() => {
+    document.documentElement.dataset.adminTheme = theme;
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((previous) => {
+      const next = previous === 'dark' ? 'light' : 'dark';
+      setAdminTheme(next);
+      return next;
+    });
+  };
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {
@@ -177,8 +191,10 @@ export default function AdminLayout({ children }) {
   const isAuthorized = current ? isRoleAuthorized(current.roles, role) : true;
 
   return (
-    <div style={{
-      background: '#F8FAFC',
+    <div
+      className={theme === 'dark' ? 'admin-theme-dark' : ''}
+      style={{
+        background: '#F8FAFC',
       color: '#0F172A',
       fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       WebkitFontSmoothing: 'antialiased',
@@ -364,42 +380,6 @@ export default function AdminLayout({ children }) {
             </div>
           )}
 
-          {/* Quick Total Cases Navbar Button */}
-          <button
-            type="button"
-            onClick={() => navigate(`${basePath}?view=cases`)}
-            title="Open Total Cases Dossier"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: currentView === 'cases' ? '#EFF6FF' : '#FFFFFF',
-              border: currentView === 'cases' ? '1.5px solid rgb(0, 115, 230)' : '1px solid #CBD5E1',
-              padding: '6px 12px',
-              borderRadius: 6,
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgb(0, 115, 230)'; }}
-            onMouseLeave={(e) => { if (currentView !== 'cases') e.currentTarget.style.borderColor = '#CBD5E1'; }}
-          >
-            <Shield size={14} color="rgb(0, 115, 230)" />
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1E293B' }}>Total Cases:</span>
-            <span style={{
-              fontFamily: 'monospace',
-              fontSize: 11,
-              fontWeight: 900,
-              background: 'rgb(0, 115, 230)',
-              color: '#FFFFFF',
-              padding: '1.5px 7px',
-              borderRadius: 4,
-              letterSpacing: '0.5px',
-            }}>
-              {String(stats.total || 24).padStart(3, '0')}
-            </span>
-          </button>
-
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -430,29 +410,6 @@ export default function AdminLayout({ children }) {
               </div>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setShowEmailModal(true)}
-            style={{
-              background: '#F0F9FF',
-              color: '#0369A1',
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '6px 12px',
-              borderRadius: 5,
-              border: '1.5px solid #BAE6FD',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#E0F2FE'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
-          >
-            <Mail size={13} /> Email Report
-          </button>
 
           <button
             type="button"
@@ -540,6 +497,43 @@ export default function AdminLayout({ children }) {
                     <LayoutDashboard size={18} color={currentView === 'overview' ? 'rgb(0, 115, 230)' : '#475569'} />
                     {!collapsed && <span>Overview &amp; KPIs</span>}
                   </button>
+
+                  {(role === 'sysadmin' || role === 'super_admin') && (
+                    <div style={{ marginTop: 16, marginBottom: 4 }}>
+                      {(!collapsed || currentView === 'officers') && (
+                        <div style={{ fontSize: 10, fontWeight: 900, color: '#7C2D12', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 14px 6px' }}>
+                          Officer Management
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => navigate(`${basePath}?view=officers`)}
+                        title={collapsed ? "Officer Management" : undefined}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: collapsed ? '11px 0' : '10px 14px',
+                          justifyContent: collapsed ? 'center' : 'flex-start',
+                          borderRadius: 8,
+                          fontSize: 13,
+                          fontWeight: currentView === 'officers' ? 800 : 600,
+                          color: currentView === 'officers' ? 'rgb(0, 115, 230)' : '#334155',
+                          background: currentView === 'officers' ? '#EFF6FF' : 'transparent',
+                          border: currentView === 'officers' ? '1px solid #DBEAFE' : '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          width: '100%',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => { if (currentView !== 'officers') e.currentTarget.style.background = '#F8FAFC'; }}
+                        onMouseLeave={(e) => { if (currentView !== 'officers') e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <Users size={18} color={currentView === 'officers' ? 'rgb(0, 115, 230)' : '#475569'} />
+                        {!collapsed && <span>Officer Directory &amp; Access</span>}
+                      </button>
+                    </div>
+                  )}
 
                   {/* 2. Total Cases (Dossiers & Full Details) */}
                   <button
@@ -892,17 +886,17 @@ export default function AdminLayout({ children }) {
                 maxWidth: 680,
                 margin: '40px auto',
               }}>
-                <div style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: '50%',
-                  background: '#FEE2E2',
-                  color: '#DC2626',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 16px',
-                }}>
+              <div style={{
+                width: 60,
+                height: 60,
+                borderRadius: '50%',
+                background: '#FEE2E2',
+                color: '#DC2626',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}>
                   <ShieldAlert size={32} />
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 900, color: '#DC2626', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -1110,113 +1104,17 @@ export default function AdminLayout({ children }) {
         </div>
       )}
 
-      {/* Station Settings Modal */}
       {showSettingsModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-        }}>
-          <div style={{
-            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12,
-            padding: '28px 32px', width: 480, maxWidth: '92vw',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div>
-                <span style={{ fontSize: 10, fontWeight: 800, background: '#EFF6FF', color: 'rgb(0, 115, 230)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
-                  Station Configuration
-                </span>
-                <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Settings size={18} color="rgb(0, 115, 230)" /> Station &amp; Officer Settings
-                </h3>
-              </div>
-              <button onClick={() => { setShowSettingsModal(false); setSettingsSaved(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
-                  Station Jurisdiction Name
-                </label>
-                <input
-                  type="text"
-                  value={stationSettings.stationName}
-                  onChange={(e) => setStationSettings({ ...stationSettings, stationName: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A' }}>Telephony Voice Intake Alerts</div>
-                  <div style={{ fontSize: 11, color: '#64748B' }}>Audio chime on new caller triage</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={stationSettings.audioAlerts}
-                  onChange={(e) => setStationSettings({ ...stationSettings, audioAlerts: e.target.checked })}
-                  style={{ width: 18, height: 18, cursor: 'pointer' }}
-                />
-              </div>
-
-              <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A' }}>Auto-Dispatch Critical Distress (SVI &gt; 70)</div>
-                  <div style={{ fontSize: 11, color: '#64748B' }}>Automatic PCR proximity alert</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={stationSettings.autoDispatchCritical}
-                  onChange={(e) => setStationSettings({ ...stationSettings, autoDispatchCritical: e.target.checked })}
-                  style={{ width: 18, height: 18, cursor: 'pointer' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
-                  Portal Working Language
-                </label>
-                <select
-                  value={stationSettings.language}
-                  onChange={(e) => setStationSettings({ ...stationSettings, language: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
-                >
-                  <option value="English">English (Official Court &amp; Police Standard)</option>
-                  <option value="Hindi">हिन्दी (Hindi Standard)</option>
-                  <option value="Marathi">मराठी (Maharashtra State Standard)</option>
-                </select>
-              </div>
-
-              {settingsSaved && (
-                <div style={{ color: '#15803D', fontWeight: 700, fontSize: 12, background: '#DCFCE7', padding: '8px 12px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Check size={14} /> Preferences saved successfully.
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettingsSaved(true);
-                    setTimeout(() => { setSettingsSaved(false); setShowSettingsModal(false); }, 1500);
-                  }}
-                  style={{ flex: 1, background: 'rgb(0, 115, 230)', color: '#FFF', border: 'none', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
-                >
-                  Save Station Preferences
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowSettingsModal(false)}
-                  style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdminSettingsModal
+          session={session}
+          roleLabel={rank.label}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onClose={() => setShowSettingsModal(false)}
+          onLogout={handleLogout}
+          stationSettings={stationSettings}
+          setStationSettings={setStationSettings}
+        />
       )}
 
       {/* Help & FAQs Modal */}

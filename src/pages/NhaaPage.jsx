@@ -126,6 +126,21 @@ export default function NhaaPage() {
   const [trackId, setTrackId] = useState('');
   const [statusResult, setStatusResult] = useState(null);
   const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [chatbotStep, setChatbotStep] = useState('menu');
+  const [chatbotWarningAccepted, setChatbotWarningAccepted] = useState(false);
+  const [rescueForm, setRescueForm] = useState({
+    fullName: '',
+    mobile: '',
+    location: '',
+    problem: '',
+  });
+  const [rescueOtp, setRescueOtp] = useState('');
+  const [rescueOtpSent, setRescueOtpSent] = useState(false);
+  const [rescueOtpVerified, setRescueOtpVerified] = useState(false);
+  const [rescueReference, setRescueReference] = useState('');
+  const [rescueSubmitted, setRescueSubmitted] = useState(false);
+  const [rescueError, setRescueError] = useState('');
+  const [locationStatus, setLocationStatus] = useState('');
 
   // Status tracking simulation
   const handleTrackSubmit = (e) => {

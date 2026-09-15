@@ -1825,7 +1825,7 @@ function AppContent() {
          <Route path="/admin/director" element={<RequireRole><AdminShell><DirectorScreen /></AdminShell></RequireRole>} />
          <Route path="/admin/judiciary" element={<RequireRole><AdminShell><JudiciaryScreen /></AdminShell></RequireRole>} />
          <Route path="/admin/swo" element={<RequireRole><AdminShell><SWOScreen /></AdminShell></RequireRole>} />
-         <Route path="/admin/sysadmin" element={<RequireRole><SysAdminScreen /></RequireRole>} />
+         <Route path="/admin/sysadmin" element={<RequireRole><AdminShell><SysAdminScreen embedded /></AdminShell></RequireRole>} />
        </Routes>
 
       {(!isDedicatedPortal && !isAdminRoute) && <Footer />}

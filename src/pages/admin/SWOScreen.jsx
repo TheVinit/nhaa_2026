@@ -5,6 +5,7 @@ import { districtMockData } from '../../data/districtCases';
 import RiskBadge from '../../components/admin/RiskBadge';
 import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
 import CaseSortBar from '../../components/admin/CaseSortBar';
+import CaseEmailButton from '../../components/admin/CaseEmailButton';
 
 function apiToCase(apiCase) {
   const ra = apiCase.risk_assessments?.[0];
@@ -349,10 +350,12 @@ export default function SWOScreen() {
                       <Scale size={12} color="rgb(0, 115, 230)" /> {c.judiciary_directive}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCase(c)}
+                    <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <CaseEmailButton caseData={c} compact />
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCase(c)}
                       style={{
                         background: 'rgb(0, 115, 230)',
                         color: '#FFFFFF',
@@ -370,7 +373,8 @@ export default function SWOScreen() {
                     >
                       Process Relief &rarr;
                     </button>
-                  </td>
+                  </div>
+                </td>
                 </tr>
               ))
             )}
