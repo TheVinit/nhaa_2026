@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, Lock, Scale, MapPin, FolderOpen, CheckCircle2, ShieldCheck, ArrowRight, User, Phone, FileText } from 'lucide-react';
 import { listCases, connectWebSocket, forwardToSWO, postCaseAction } from '../../services/api';
 import { districtMockData } from '../../data/districtCases';
@@ -51,6 +52,8 @@ const mergeWithMock = (apiCases = []) => {
 };
 
 export default function JudiciaryScreen() {
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [cases, setCases] = useState(() => mergeWithMock([]));
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -90,6 +93,12 @@ export default function JudiciaryScreen() {
   const forwardedToSWO = cases.filter((c) => c.forwarded_to_swo);
 
   const displayedCases = cases.filter((c) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(c.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(c.status)) return false;
+    }
+
     if (selectedTab === 'locked' && !c.is_locked) return false;
     if (selectedTab === 'adjudicated' && !c.forwarded_to_swo) return false;
 

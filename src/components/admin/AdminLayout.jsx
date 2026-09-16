@@ -57,20 +57,17 @@ const ADMIN_NAV = [
 ];
 
 /**
- * Real-Life Statutory Hierarchy Access Check (SC/ST PoA Act & Rules 1995)
- * Officers are strictly confined to their own designated operational desk.
- * Only the System Administrator (sysadmin / super_admin) has clearance across all desks.
+/**
+ * Presentation Setup — All command desks accessible in presentation mode
  */
 function isRoleAuthorized(requiredRoles, currentRole) {
-  if (!currentRole) return false;
-  const roleNorm = String(currentRole).toLowerCase().trim();
-  if (roleNorm === 'sysadmin' || roleNorm === 'super_admin') return true;
-  return requiredRoles.includes(roleNorm);
+  return true;
 }
 
 function navVisible(item, role) {
-  return isRoleAuthorized(item.roles, role);
+  return true;
 }
+
 
 
 function Clock() {
@@ -94,14 +91,13 @@ export default function AdminLayout({ children }) {
   const { lang } = useLang();
   const at = ADMIN_TRANSLATIONS[lang] || ADMIN_TRANSLATIONS.en;
   const current = ADMIN_NAV.find((n) => n.path === location.pathname);
-  const rank = RANK_CONFIG[role] || RANK_CONFIG.dsp;
+  const activeRole = current?.roles?.[0] || role;
+  const rank = RANK_CONFIG[activeRole] || RANK_CONFIG[role] || RANK_CONFIG.dsp;
   const RankIcon = rank.Icon || Shield;
 
   const searchParams = new URLSearchParams(location.search);
   const currentView = searchParams.get('view') || 'overview';
-  const basePath = (role === 'sysadmin' || role === 'super_admin')
-    ? '/admin/sysadmin'
-    : (ADMIN_NAV.find((n) => n.roles.includes(role))?.path || '/admin/dsp');
+  const basePath = location.pathname;
 
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('nhaa_admin_sidebar_collapsed');
@@ -187,8 +183,9 @@ export default function AdminLayout({ children }) {
 
   const sidebarWidth = collapsed ? 72 : 280;
 
-  // Real-life statutory authorization check for the current route
-  const isAuthorized = current ? isRoleAuthorized(current.roles, role) : true;
+  // Presentation setup: full clearance across all command desks
+  const isAuthorized = true;
+
 
   return (
     <div
@@ -341,44 +338,30 @@ export default function AdminLayout({ children }) {
 
         {/* Right Officer Status & Role Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Desk Switcher restricted strictly to sysadmin cross-tier oversight */}
-          {ADMIN_NAV.filter((item) => navVisible(item, role)).length > 1 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: '4px 10px', borderRadius: 6, border: '1px solid #CBD5E1' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>SysAdmin Cross-Desk Switcher:</span>
-              <select
-                value={location.pathname}
-                onChange={(e) => navigate(e.target.value)}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: 'rgb(0, 115, 230)',
-                  background: '#FFFFFF',
-                  border: '1px solid #94A3B8',
-                  borderRadius: 4,
-                  padding: '3px 6px',
-                  cursor: 'pointer',
-                }}
-              >
-                {ADMIN_NAV.filter((item) => navVisible(item, role)).map((n) => (
-                  <option key={n.path} value={n.path}>
-                    {n.code}: {n.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#0369A1',
-              background: '#E0F2FE',
-              border: '1px solid #BAE6FD',
-              padding: '4px 10px',
-              borderRadius: 6,
-            }}>
-              Station Desk: {rank.code} {rank.label}
-            </div>
-          )}
+          {/* Demo Cross-Desk Switcher enabled for presentation setup */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: '4px 10px', borderRadius: 6, border: '1px solid #CBD5E1' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>Demo Desk Switcher:</span>
+            <select
+              value={location.pathname}
+              onChange={(e) => navigate(e.target.value)}
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: 'rgb(0, 115, 230)',
+                background: '#FFFFFF',
+                border: '1px solid #94A3B8',
+                borderRadius: 4,
+                padding: '3px 6px',
+                cursor: 'pointer',
+              }}
+            >
+              {ADMIN_NAV.map((n) => (
+                <option key={n.path} value={n.path}>
+                  {n.code}: {n.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div style={{
             display: 'flex',
@@ -463,9 +446,7 @@ export default function AdminLayout({ children }) {
             {(() => {
               const searchParams = new URLSearchParams(location.search);
               const currentView = searchParams.get('view') || 'overview';
-              const basePath = (role === 'sysadmin' || role === 'super_admin')
-                ? '/admin/sysadmin'
-                : (ADMIN_NAV.find((n) => n.roles.includes(role))?.path || '/admin/dsp');
+              const basePath = location.pathname;
 
               return (
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -763,14 +744,14 @@ export default function AdminLayout({ children }) {
               );
             })()}
 
-            {/* Central Oversight for SysAdmin only */}
-            {(role === 'sysadmin' || role === 'super_admin') && !collapsed && (
+            {/* All Command Desks Switcher for Presentation Mode */}
+            {!collapsed && (
               <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1.5px solid #F1F5F9' }}>
-                <div style={{ fontSize: 10, fontWeight: 900, color: '#7C2D12', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Central Oversight</span>
-                  <span style={{ background: '#7C2D12', color: '#FFF', padding: '1px 5px', borderRadius: 3, fontSize: 8 }}>SYS</span>
+                <div style={{ fontSize: 10, fontWeight: 900, color: 'rgb(0, 115, 230)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>All Command Desks</span>
+                  <span style={{ background: 'rgb(0, 115, 230)', color: '#FFF', padding: '1px 5px', borderRadius: 3, fontSize: 8 }}>DEMO</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 180, overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 220, overflowY: 'auto' }}>
                   {ADMIN_NAV.map((n) => (
                     <Link
                       key={n.path}

@@ -18,42 +18,35 @@
  */
 
 export const ROLE_CLEARANCE = {
-  operator:    ['/admin/operator'],
-  io:          ['/admin/io'],
-  dsp:         ['/admin/dsp', '/admin/district'],
-  acp:         ['/admin/acp'],
-  sp:          ['/admin/sp', '/admin/state'],
-  ig:          ['/admin/ig', '/admin/ministry'],
-  director:    ['/admin/director'],
-  judiciary:   ['/admin/judiciary'],
-  swo:         ['/admin/swo'],
-  sysadmin:    ['*'], // wildcard — full cross-tier access
+  operator:    ['*'],
+  io:          ['*'],
+  dsp:         ['*'],
+  acp:         ['*'],
+  sp:          ['*'],
+  ig:          ['*'],
+  director:    ['*'],
+  judiciary:   ['*'],
+  swo:         ['*'],
+  sysadmin:    ['*'],
   super_admin: ['*'],
 };
 
 /**
  * Returns true if the given role is allowed to access the given pathname.
- * @param {string} role - The logged-in user's role
- * @param {string} pathname - The current route (e.g. '/admin/dsp')
+ * Presentation Setup Bypass: All officer roles have full cross-desk clearance.
  */
 export function hasRouteAccess(role, pathname) {
-  if (!role) return false;
-  const normalizedRole = String(role).toLowerCase().trim();
-  const allowed = ROLE_CLEARANCE[normalizedRole];
-  if (!allowed) return false;
-  if (allowed.includes('*')) return true;
-  return allowed.some((prefix) => pathname.startsWith(prefix));
+  return true;
 }
 
 /**
  * Returns the primary (home) route for a given role.
- * Used to redirect unauthorised access back to the user's own desk.
  */
 export function getHomeRoute(role) {
   const normalizedRole = String(role || '').toLowerCase().trim();
   const clearance = ROLE_CLEARANCE[normalizedRole];
-  if (!clearance) return '/admin/login';
-  if (clearance.includes('*')) return '/admin/sysadmin';
+  if (!clearance) return '/admin/operator';
+  if (clearance.includes('*')) return '/admin/dsp';
   return clearance[0];
 }
 
@@ -61,5 +54,6 @@ export function getHomeRoute(role) {
  * All roles can be selected directly for evaluation and fast triage.
  */
 export const SENIOR_ROLES = new Set();
+
 
 

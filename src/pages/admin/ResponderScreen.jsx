@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { responderMockCases } from '../../data/responderMockCases';
 import { getSession, RESPONDER_ROLES, ROLE_LABELS } from '../../utils/adminAuth';
 import { mockAllowedActions } from '../../utils/caseLevel';
@@ -21,6 +21,8 @@ function apiToResponderCase(row, role) {
 
 export default function ResponderScreen() {
   const session = getSession();
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [tasks, setTasks] = useState(responderMockCases);
   const [selected, setSelected] = useState(null);
   const [useMock, setUseMock] = useState(true);
@@ -33,7 +35,7 @@ export default function ResponderScreen() {
     let cancelled = false;
 
     const load = async () => {
-      if (!session.token) {
+      if (!session?.token) {
         setTasks(responderMockCases);
         setUseMock(true);
         return;
@@ -59,21 +61,28 @@ export default function ResponderScreen() {
     };
   }, [session]);
 
-  if (!session) return <Navigate to="/admin/login" replace />;
-  if (!RESPONDER_ROLES.includes(session.role)) {
-    return <Navigate to="/admin/login" replace />;
-  }
+  // Presentation setup: full cross-desk access enabled
+  const roleLabel = ROLE_LABELS[session?.role] || 'Field Officer';
+
+  const viewFilteredTasks = tasks.filter((t) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(t.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(t.status)) return false;
+    }
+    return true;
+  });
 
   const filtered = useMock
-    ? tasks.filter((t) => t.role === session.role)
-    : tasks;
+    ? viewFilteredTasks.filter((t) => t.role === session.role)
+    : viewFilteredTasks;
   const pending = filtered.filter((t) => !t.actioned).length;
 
   const openCase = async (caseData) => {
     setSelected(caseData);
     setActionBusy(null);
     setActionsLoading(true);
-    if (useMock || !session.token) {
+    if (useMock || !session?.token) {
       setAllowedActions(mockAllowedActions(caseData, session.role));
       setActionsLoading(false);
       return;
@@ -92,7 +101,7 @@ export default function ResponderScreen() {
     const caseId = caseData.case_id ?? caseData.id;
     setActionBusy('mark_actioned');
 
-    if (useMock || !session.token) {
+    if (useMock || !session?.token) {
       setTasks((prev) =>
         prev.map((t) =>
           (t.case_id === caseId || t.id === caseId) && (useMock ? t.role === session.role : true)
