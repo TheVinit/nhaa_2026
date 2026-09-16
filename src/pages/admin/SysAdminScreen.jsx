@@ -12,56 +12,56 @@ import { createOfficer, deactivateOfficer, listOfficers, updateOfficer } from '.
 const ALL_DESKS = [
   {
     role: 'operator', label: 'Call Centre Operator', code: 'L-0',
-    desc: 'AI Triage & Intake Queue',
-    cases: 14, active: 3, alerts: 1, pending: 5, resolved: 9,
+    desc: 'AI Triage & Intake Queue (14566 IVRS, Portal, Chatbot)',
+    cases: 247, active: 38, alerts: 14, pending: 86, approved: 161, resolved: 161,
     accent: '#0284C7',
   },
   {
     role: 'io', label: 'Investigating Officer', code: 'L-0.5',
-    desc: 'Ground Investigation & Site Evidence',
-    cases: 9, active: 2, alerts: 0, pending: 3, resolved: 6,
+    desc: 'Ground Investigation & Site Evidence Collection',
+    cases: 143, active: 22, alerts: 5, pending: 52, approved: 91, resolved: 91,
     accent: '#2563EB',
   },
   {
-    role: 'acp', label: 'ACP Command', code: 'L-1',
-    desc: 'Case Scrutiny & Field Forwarding',
-    cases: 6, active: 1, alerts: 0, pending: 2, resolved: 4,
-    accent: '#0369A1',
-  },
-  {
     role: 'dsp', label: 'DSP Operations', code: 'L-1',
-    desc: 'District Field Operations & Inquiry',
-    cases: 7, active: 1, alerts: 2, pending: 4, resolved: 3,
+    desc: 'Pune District Field Operations & 60-Day Inquiry Mandate',
+    cases: 98, active: 14, alerts: 8, pending: 36, approved: 62, resolved: 62,
     accent: '#059669',
   },
   {
+    role: 'acp', label: 'ACP Command', code: 'L-1',
+    desc: 'Case Scrutiny & Field Task Force Forwarding',
+    cases: 74, active: 11, alerts: 3, pending: 27, approved: 47, resolved: 47,
+    accent: '#0369A1',
+  },
+  {
     role: 'sp', label: 'SP Oversight', code: 'L-2',
-    desc: 'Delay Alert System & Case Lock',
-    cases: 5, active: 1, alerts: 0, pending: 1, resolved: 4,
+    desc: 'Pre-Judiciary Delay Alert & SHA-256 Case Lock',
+    cases: 52, active: 7, alerts: 2, pending: 19, approved: 33, resolved: 33,
     accent: '#D97706',
   },
   {
     role: 'ig', label: 'IG Intelligence', code: 'L-3',
-    desc: 'National Overview & Apex Review',
-    cases: 3, active: 1, alerts: 1, pending: 1, resolved: 2,
+    desc: 'Maharashtra State Heatmap & Apex Policy Review',
+    cases: 31, active: 4, alerts: 3, pending: 11, approved: 20, resolved: 20,
     accent: '#DC2626',
   },
   {
     role: 'director', label: 'Director Control', code: 'L-3+',
-    desc: 'Full-Tier Performance & Aggregate KPIs',
-    cases: 2, active: 0, alerts: 0, pending: 0, resolved: 2,
+    desc: 'All-India Aggregate KPIs & National Performance Audit',
+    cases: 18, active: 2, alerts: 1, pending: 6, approved: 12, resolved: 12,
     accent: '#7C2D12',
   },
   {
     role: 'judiciary', label: 'Judiciary Review', code: 'L-4',
-    desc: 'Audit Trail Scrutiny & Directives to SWO',
-    cases: 4, active: 1, alerts: 0, pending: 2, resolved: 2,
+    desc: 'Sealed Evidence Scrutiny & SWO Binding Directives',
+    cases: 26, active: 5, alerts: 1, pending: 10, approved: 16, resolved: 16,
     accent: '#7C3AED',
   },
   {
     role: 'swo', label: 'SWO Rehabilitation', code: 'L-5',
-    desc: 'Victim Rehabilitation & Welfare Tracking',
-    cases: 6, active: 2, alerts: 0, pending: 2, resolved: 4,
+    desc: 'Victim 3-Stage DBT & Scheme Linkages (Rule 12(4))',
+    cases: 89, active: 19, alerts: 2, pending: 31, approved: 58, resolved: 58,
     accent: '#047857',
   },
 ];
@@ -96,16 +96,21 @@ const DEFAULT_USER_ROWS = [
 const MANAGED_USERS_KEY = 'nhaa_managed_users';
 
 const AUDIT_LOG = [
-  { time: '14:31:05', user: 'DSP Rajesh Shinde', action: 'Escalated case #C-2026-0891 to SP desk', level: 'warn' },
-  { time: '14:28:44', user: 'Operator Priya Kadam', action: 'New case intake — caller 98XXXXXXXX, risk tier: HIGH', level: 'critical' },
-  { time: '14:25:12', user: 'IG Priya Kulkarni', action: 'Viewed aggregate heatmap for Pune District', level: 'info' },
-  { time: '14:21:09', user: 'IO Vikram Shinde', action: 'Uploaded panchnama document for case #C-2026-0887', level: 'info' },
-  { time: '14:18:33', user: 'SP Anand Patil', action: 'Case #C-2026-0884 locked with SHA-256 seal', level: 'success' },
-  { time: '14:15:00', user: 'SWO Anita Pawar', action: 'DBT Stage 1 disbursed for victim ID V-2026-441', level: 'success' },
-  { time: '14:11:22', user: 'Judiciary M. L. Gaikwad', action: 'Directive issued to SWO for Rule 12(4) relief', level: 'warn' },
-  { time: '14:08:55', user: 'ACP Sanjay More', action: 'IO tasked for spot inspection — PS Bhosari MIDC', level: 'info' },
-  { time: '14:02:17', user: 'Operator Priya Kadam', action: 'Silent distress signal received — auto-triaged as HIGH', level: 'critical' },
-  { time: '13:58:41', user: 'Director K. S. Deshmukh', action: 'Viewed monthly KPI report — Maharashtra state', level: 'info' },
+  { time: '14:31:05', user: 'DSP Rajesh Shinde', action: 'Escalated case #C-2026-0891 to SP desk — assault at Bhosari MIDC', level: 'warn' },
+  { time: '14:28:44', user: 'Operator Priya Kadam', action: 'New IVRS intake — caller 98XXXXXXXX (Janwadi), SVI 94.5 CRITICAL', level: 'critical' },
+  { time: '14:25:12', user: 'IG Priya Kulkarni', action: 'Viewed district-wise atrocity heatmap — Maharashtra state', level: 'info' },
+  { time: '14:21:09', user: 'IO Vikram Shinde', action: 'Uploaded spot panchnama PDF + 3 witness videos (Case #C-2026-0887)', level: 'info' },
+  { time: '14:18:33', user: 'SP Anand Patil', action: 'Case #C-2026-0884 pre-judiciary locked with SHA-256 seal (hash: 0xA9F3…E812)', level: 'success' },
+  { time: '14:15:00', user: 'SWO Anita Pawar', action: 'DBT Stage 1 ₹85,000 disbursed via PFMS — Victim V-2026-441 (Wagholi)', level: 'success' },
+  { time: '14:11:22', user: 'Judiciary M. L. Gaikwad', action: 'Rule 12(4) directive — ₹4.25 lakh interim compensation to SWO', level: 'warn' },
+  { time: '14:08:55', user: 'ACP Sanjay More', action: 'IO Vikram Shinde tasked — spot inspection PS Bhosari MIDC + medical MLC', level: 'info' },
+  { time: '14:02:17', user: 'Operator Priya Kadam', action: 'Silent distress signal #S-2026-2211 received — auto-escalated to PCR van (HIGH)', level: 'critical' },
+  { time: '13:58:41', user: 'Director K. S. Deshmukh', action: 'Reviewed monthly KPI dashboard — 89.2% SLA compliance, ₹2.87 Cr DBT disbursed', level: 'info' },
+  { time: '13:55:20', user: 'SP Anand Patil', action: 'Approved 4 charge-sheets — Sec 3(2)(v) & IPC 323 (Pune Rural)', level: 'success' },
+  { time: '13:52:10', user: 'SWO Anita Pawar', action: 'Linked 3 beneficiaries to PM-AJAY & Post-Matric Scholarship schemes', level: 'info' },
+  { time: '13:48:55', user: 'IO Vikram Shinde', action: 'FIR zero-time registered at PS Shikrapur — Sec 3(1)(g) land dispossession', level: 'info' },
+  { time: '13:45:30', user: 'DSP Rajesh Shinde', action: '60-day Sec 4 mandate alert — 3 cases requiring charge-sheet next week', level: 'warn' },
+  { time: '13:42:18', user: 'Operator Priya Kadam', action: 'Mobile app intake — 6 bonded labourers rescued at Daund sugarcane farm (HIGH)', level: 'critical' },
 ];
 
 const LEVEL_STYLE = {
@@ -140,10 +145,14 @@ function getRoleLabel(role) {
   return USER_ROLE_OPTIONS.find((option) => option.value === role)?.label || role;
 }
 
-const TOTAL_CASES   = ALL_DESKS.reduce((a, d) => a + d.cases, 0);
-const TOTAL_PENDING = ALL_DESKS.reduce((a, d) => a + d.pending, 0);
-const TOTAL_ALERTS  = ALL_DESKS.reduce((a, d) => a + d.alerts, 0);
-const TOTAL_ACTIVE  = ALL_DESKS.reduce((a, d) => a + d.active, 0);
+const TOTAL_CASES      = ALL_DESKS.reduce((a, d) => a + d.cases, 0);
+const TOTAL_PENDING    = ALL_DESKS.reduce((a, d) => a + d.pending, 0);
+const TOTAL_ALERTS     = ALL_DESKS.reduce((a, d) => a + d.alerts, 0);
+const TOTAL_ACTIVE     = ALL_DESKS.reduce((a, d) => a + d.active, 0);
+const TOTAL_APPROVED   = ALL_DESKS.reduce((a, d) => a + (d.approved ?? d.resolved), 0);
+const TOTAL_RESOLVED   = ALL_DESKS.reduce((a, d) => a + d.resolved, 0);
+const TOTAL_ESCALATED  = Math.floor(TOTAL_PENDING * 0.42);
+const SLA_COMPLIANCE   = 89.2;
 
 export default function SysAdminScreen({ embedded = false }) {
   const navigate = useNavigate();
@@ -470,10 +479,12 @@ export default function SysAdminScreen({ embedded = false }) {
   });
 
   const STAT_CARDS = [
-    { label: 'Total Cases',   value: TOTAL_CASES,   icon: FileText,      color: 'rgb(0, 115, 230)', bg: '#EFF6FF', border: '#DBEAFE' },
-    { label: 'Active Now',    value: TOTAL_ACTIVE,  icon: Activity,      color: '#059669',           bg: '#F0FDF4', border: '#BBF7D0' },
-    { label: 'Pending SLA',   value: TOTAL_PENDING, icon: Clock,         color: '#D97706',           bg: '#FFFBEB', border: '#FDE68A' },
-    { label: 'Active Alerts', value: TOTAL_ALERTS,  icon: AlertTriangle, color: '#DC2626',           bg: '#FEF2F2', border: '#FECACA' },
+    { label: 'Total Cases',   value: TOTAL_CASES,      icon: FileText,      color: 'rgb(0, 115, 230)', bg: '#EFF6FF', border: '#DBEAFE', sublabel: 'All desks aggregated' },
+    { label: 'Active Now',    value: TOTAL_ACTIVE,      icon: Activity,      color: '#059669',           bg: '#F0FDF4', border: '#BBF7D0', sublabel: 'Live investigations' },
+    { label: 'Pending SLA',   value: TOTAL_PENDING,     icon: Clock,         color: '#D97706',           bg: '#FFFBEB', border: '#FDE68A', sublabel: 'Escalated + In Progress' },
+    { label: 'Approved Cases', value: TOTAL_APPROVED,    icon: CheckCircle2,  color: '#0369A1',           bg: '#F0F9FF', border: '#BAE6FD', sublabel: 'Resolved + Charge-sheets' },
+    { label: 'Active Alerts', value: TOTAL_ALERTS,    icon: AlertTriangle, color: '#DC2626',           bg: '#FEF2F2', border: '#FECACA', sublabel: 'High + Critical' },
+    { label: `SLA ${SLA_COMPLIANCE}%`, value: 'A+', icon: TrendingUp,  color: '#047857',        bg: '#ECFDF5', border: '#A7F3D0', sublabel: '60-day §4 mandate' },
   ];
 
   return (
@@ -839,9 +850,89 @@ export default function SysAdminScreen({ embedded = false }) {
         </div>
         )}
 
+        {/* ─── SIH DEMO: Role Quick Switcher ───────────────────────── */}
+        <div style={{
+          background: 'linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%)',
+          border: '1px solid #BFDBFE',
+          borderLeft: '4px solid rgb(0, 115, 230)',
+          borderRadius: 10,
+          padding: '16px 20px',
+          marginBottom: 24,
+          boxShadow: '0 1px 4px rgba(0,115,230,0.08)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: 'rgb(0, 115, 230)', color: '#FFFFFF',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Users size={16} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🎬 SIH 2026 Demo Quick Navigator
+                </div>
+                <div style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>
+                  Jump directly to any hierarchical desk — no login required
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#0369A1', background: '#FFFFFF', border: '1px solid #BAE6FD', padding: '3px 10px', borderRadius: 999 }}>
+              {ALL_DESKS.length} DESKS AVAILABLE
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {ALL_DESKS.map((desk) => (
+              <button
+                key={desk.role}
+                type="button"
+                onClick={() => {
+                  const target = desk.role === 'dsp' ? '/admin/district'
+                    : desk.role === 'sp' ? '/admin/state'
+                    : desk.role === 'ig' ? '/admin/ministry'
+                    : `/admin/${desk.role}`;
+                  navigate(target);
+                }}
+                style={{
+                  background: '#FFFFFF',
+                  border: `1.5px solid ${desk.accent}55`,
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = `${desk.accent}15`;
+                  e.currentTarget.style.borderColor = desk.accent;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#FFFFFF';
+                  e.currentTarget.style.borderColor = `${desk.accent}55`;
+                }}
+              >
+                <span style={{
+                  fontSize: 9, fontWeight: 900,
+                  background: desk.accent, color: '#FFFFFF',
+                  padding: '1px 5px', borderRadius: 3,
+                }}>
+                  {desk.code}
+                </span>
+                {desk.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Top Summary Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-          {STAT_CARDS.map(({ label, value, icon: Icon, color, bg, border }) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
+          {STAT_CARDS.map(({ label, value, icon: Icon, color, bg, border, sublabel }) => (
             <div key={label} style={{
               background: '#FFFFFF',
               border: `1px solid ${border}`,
@@ -853,17 +944,20 @@ export default function SysAdminScreen({ embedded = false }) {
               boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
             }}>
               <div style={{
-                width: 44, height: 44,
-                borderRadius: 10,
+                width: 48, height: 48,
+                borderRadius: 12,
                 background: bg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon size={20} color={color} />
+                <Icon size={22} color={color} />
               </div>
-              <div>
-                <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginTop: 3 }}>{label}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#334155', marginTop: 4 }}>{label}</div>
+                {sublabel && (
+                  <div style={{ fontSize: 10, color: '#64748B', marginTop: 2, fontWeight: 600 }}>{sublabel}</div>
+                )}
               </div>
             </div>
           ))}
@@ -994,37 +1088,60 @@ export default function SysAdminScreen({ embedded = false }) {
               </div>
 
               {/* Stats Row */}
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {[
                   { label: 'Total', value: desk.cases, color: desk.accent },
                   { label: 'Active', value: desk.active, color: '#059669' },
                   { label: 'Pending', value: desk.pending, color: '#D97706' },
+                  { label: 'Approved', value: desk.approved ?? desk.resolved, color: '#0369A1' },
                   { label: 'Resolved', value: desk.resolved, color: '#475569' },
                 ].map(({ label, value, color }) => (
-                  <div key={label} style={{ flex: 1, textAlign: 'center' }}>
+                  <div key={label} style={{ flex: 1, minWidth: 50, textAlign: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
                     <div style={{ fontSize: 9.5, color: '#94A3B8', fontWeight: 600, marginTop: 2 }}>{label}</div>
                   </div>
                 ))}
               </div>
 
-              {/* Read-only indicator — no navigate button */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '7px 10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: 6,
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94A3B8',
-              }}>
-                <Eye size={12} color="#94A3B8" />
-                Monitoring View — No Login Access
-              </div>
+              {/* Navigate button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const target = desk.role === 'dsp' ? '/admin/district'
+                    : desk.role === 'sp' ? '/admin/state'
+                    : desk.role === 'ig' ? '/admin/ministry'
+                    : `/admin/${desk.role}`;
+                  navigate(target);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '8px 12px',
+                  background: `${desk.accent}10`,
+                  border: `1.5px solid ${desk.accent}55`,
+                  color: desk.accent,
+                  borderRadius: 7,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  marginTop: 12,
+                  cursor: 'pointer',
+                  width: '100%',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = desk.accent;
+                  e.currentTarget.style.color = '#FFFFFF';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = `${desk.accent}10`;
+                  e.currentTarget.style.color = desk.accent;
+                }}
+              >
+                <Eye size={13} />
+                Open {desk.label} Desk
+              </button>
             </div>
           ))}
         </div>

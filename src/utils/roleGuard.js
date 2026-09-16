@@ -17,6 +17,8 @@
  * SYSTEM sysadmin    → ALL desks (wildcard '*')
  */
 
+const IS_DEMO_MODE = true;
+
 export const ROLE_CLEARANCE = {
   operator:    ['/admin/operator'],
   io:          ['/admin/io'],
@@ -31,13 +33,28 @@ export const ROLE_CLEARANCE = {
   super_admin: ['*'],
 };
 
+const ALL_ADMIN_PATHS = [
+  '/admin/operator', '/admin/io', '/admin/dsp', '/admin/district',
+  '/admin/acp', '/admin/sp', '/admin/state', '/admin/ig',
+  '/admin/ministry', '/admin/director', '/admin/judiciary',
+  '/admin/swo', '/admin/sysadmin',
+];
+
 /**
  * Returns true if the given role is allowed to access the given pathname.
- * @param {string} role - The logged-in user's role
- * @param {string} pathname - The current route (e.g. '/admin/dsp')
+ * DEMO MODE: All authenticated users can access every admin desk for
+ * SIH judge presentation purposes. No authorization walls.
  */
 export function hasRouteAccess(role, pathname) {
   if (!role) return false;
+
+  // DEMO BYPASS: Allow any authenticated role to access any admin screen
+  // for the SIH 2026 judge presentation. No role compartmentalization.
+  if (IS_DEMO_MODE) {
+    const isAdminPath = ALL_ADMIN_PATHS.some((prefix) => pathname.startsWith(prefix));
+    if (isAdminPath) return true;
+  }
+
   const normalizedRole = String(role).toLowerCase().trim();
   const allowed = ROLE_CLEARANCE[normalizedRole];
   if (!allowed) return false;
