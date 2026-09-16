@@ -2,6 +2,7 @@
  * Benchmark mock data for the District & Multi-Tier Admin screens.
  * Features realistic Maharashtra & Pune District case profiles with authentic legal sections,
  * local police stations, hospitals, and Marathi complainant identities.
+ * All entries include recommended_action and flags for the AI triage panel.
  */
 export const districtMockData = [
   {
@@ -16,6 +17,12 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-30T10:30:00',
     assigned_io: 'DySP Rajesh Shinde (#MH-PN-4812)',
     compensation_status: 'Eligible for Direct DBT Scheme (₹1,00,000)',
+    recommended_action: 'standard_follow_up',
+    explanation_text: 'Victim denied access to public drinking water by caste-based exclusion. Complainant is a Navbauddh woman. Risk is low — no physical violence. Standard follow-up and DLSA referral recommended.',
+    flags: {
+      caste_based_discrimination: { present: true, confidence: 0.91, signals: ['Denial of access to public facility', 'Casteist slurs reported'] },
+      physical_violence: { present: false, confidence: 0.12, signals: [] },
+    },
     evidence_files: [
       { id: 101, file_name: 'complaint_copy_signed_panchayat.pdf', file_type: 'fir_copy', file_size_bytes: 420000, uploaded_at: '2026-08-31T14:10:00' },
     ],
@@ -32,6 +39,7 @@ export const districtMockData = [
     created_at: '2026-08-31T14:00:00',
     victimAgeGroup: '25-35',
     isSilentSignal: false,
+    is_silent_signal: false,
     incidentType: 'Denial of drinking water access from public village tubewell',
     incident_description: 'Complainant Smt. Sunita Kamble was obstructed from drawing drinking water from the public village tap in Wagholi by local influential persons using casteist insults.',
     case_summary: 'Public drinking water obstruction at Wagholi. SDPO Haveli division dispatched for spot verification. Peaceful water access restored under police bandobast; DLSA referral initiated.',
@@ -51,6 +59,14 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-31T09:15:00',
     assigned_io: 'ACP Sanjay More (#MH-PN-2104)',
     compensation_status: 'Interim Relief ₹1,25,000 Sanctioned (SC/ST PoA Rule 12(4))',
+    recommended_action: 'emergency_escalation',
+    explanation_text: 'Grievous assault with CCTV evidence and MLC from Sassoon Hospital. Silent distress signal detected — victim was unable to speak freely during intake. ACP assigned. Immediate escalation to SP and SWO forwarding required.',
+    flags: {
+      physical_violence: { present: true, confidence: 0.97, signals: ['MLC Sassoon Hospital confirmed fractures', 'CCTV footage retrieved from MIDC sector cameras'] },
+      silent_distress_signal: { present: true, confidence: 0.88, signals: ['Caller was whispering', 'Background noise and emotional breakdown detected by AI pipeline'] },
+      multiple_accused: { present: true, confidence: 0.94, signals: ['4 named accused in FIR', '2 arrested, 2 absconding — LOC issued'] },
+      sla_breach_risk: { present: true, confidence: 0.82, signals: ['SLA deadline within 36 hours', 'DSP has not updated status in 18 hours'] },
+    },
     evidence_files: [
       { id: 102, file_name: 'mlc_medical_sassoon_hospital.pdf', file_type: 'medical_report', file_size_bytes: 1250000, uploaded_at: '2026-08-31T13:30:00' },
       { id: 103, file_name: 'midc_cctv_assault_clip.mp4', file_type: 'site_photo', file_size_bytes: 4800000, uploaded_at: '2026-08-31T13:35:00' },
@@ -69,6 +85,7 @@ export const districtMockData = [
     created_at: '2026-08-31T13:15:00',
     victimAgeGroup: '18-25',
     isSilentSignal: true,
+    is_silent_signal: true,
     incidentType: 'Severe physical assault, caste abuse & workplace intimidation',
     incident_description: 'Victim Shri Rameshwar Gaikwad was intercepted outside his factory unit in Bhosari MIDC and severely assaulted by 4 named suspects. Caste slurs hurled and life threats issued.',
     case_summary: 'High priority grievous assault case with CCTV footage and Sassoon Hospital MLC. ACP assigned for zero-FIR registration and round-the-clock witness security.',
@@ -78,6 +95,7 @@ export const districtMockData = [
     current_level: 1,
     is_locked: false,
     forwarded_to_swo: true,
+    judiciary_directive: 'Direct immediate DBT Stage 1 compensation disbursement under SC/ST PoA Rule 12(4). Provide armed witness protection under Section 15A(1). Enroll victim under Sanjay Gandhi Niradhar Anudan Yojana.',
   },
   {
     id: 'NHAA-1006',
@@ -91,6 +109,13 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-30T14:00:00',
     assigned_io: 'DySP Pratibha Mane (#MH-PN-6190)',
     compensation_status: 'Referral for Social Justice & Education Welfare Grant',
+    recommended_action: 'counselling',
+    explanation_text: 'Minor Dalit student subjected to caste-based humiliation during school mid-day meal in public. Moderate SVI — psychological trauma is evident. Counselling referral and education welfare grant recommended.',
+    flags: {
+      minor_victim: { present: true, confidence: 0.99, signals: ['Victim is 13 years old', 'Incident within school premises — mandatory reporting under POCSO guidelines'] },
+      caste_based_discrimination: { present: true, confidence: 0.95, signals: ['Segregation during mid-day meal', 'Derogatory remarks recorded by teacher witness'] },
+      institutional_failure: { present: true, confidence: 0.79, signals: ['School headmaster did not file incident report', 'Block Education Officer not informed within 24 hours'] },
+    },
     evidence_files: [
       { id: 105, file_name: 'school_attendance_and_complaint.pdf', file_type: 'witness_statement', file_size_bytes: 310000, uploaded_at: '2026-08-31T12:20:00' },
     ],
@@ -107,6 +132,7 @@ export const districtMockData = [
     created_at: '2026-08-31T12:00:00',
     victimAgeGroup: 'Minor (13)',
     isSilentSignal: false,
+    is_silent_signal: false,
     incidentType: 'Discriminatory treatment & humiliation of Dalit student during school hours',
     incident_description: 'Minor student Rohan Sonawane was segregated during mid-day meal distribution and subjected to caste-based derogatory remarks in public classroom in Baramati.',
     case_summary: 'Inquiry instituted with Sub-Divisional Magistrate (SDM) Baramati and Block Education Officer (BEO). Headmaster summoned for statement recording.',
@@ -126,6 +152,13 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-29T16:00:00',
     assigned_io: 'SDPO Daund Division (#MH-PN-1102)',
     compensation_status: 'Bonded Labour Release & Immediate Relief Grant ₹30,000 Sanctioned',
+    recommended_action: 'police_intervention',
+    explanation_text: 'Six tribal labourers held in bonded conditions at a brick kiln in Daund. High SVI — multiple victims, forced confinement, and wage denial. Immediate police intervention required with joint Tahsildar-Labour Officer raid.',
+    flags: {
+      bonded_labour: { present: true, confidence: 0.96, signals: ['Workers denied exit from site', 'Advance payment trap identified by Labour Inspector'] },
+      multiple_victims: { present: true, confidence: 0.99, signals: ['6 named victims — all Katkari tribal community', 'Minor dependents also present at site'] },
+      physical_violence: { present: true, confidence: 0.71, signals: ['Threat of violence reported during IVRS intake', 'Stick marks documented by Tahsildar'] },
+    },
     evidence_files: [
       { id: 106, file_name: 'tahsildar_inspection_memo_daund.pdf', file_type: 'witness_statement', file_size_bytes: 520000, uploaded_at: '2026-08-31T11:45:00' },
       { id: 107, file_name: 'labour_release_certificate_signed.pdf', file_type: 'fir_copy', file_size_bytes: 840000, uploaded_at: '2026-08-31T11:50:00' },
@@ -143,6 +176,7 @@ export const districtMockData = [
     created_at: '2026-08-31T11:30:00',
     victimAgeGroup: '35-45',
     isSilentSignal: false,
+    is_silent_signal: false,
     incidentType: 'Forced bonded labour, confinement & wage withholding of Katkari tribal workers',
     incident_description: '6 tribal agricultural workers were forcibly detained at sugarcane harvesting site in Daund and denied statutory wages. Landlords threatened violence if workers departed.',
     case_summary: 'Joint raid conducted by Tahsildar Daund, Labour Officer, and Police. All 6 workers safely rescued. Prosecution lodged under Bonded Labour Act & SC/ST PoA Act.',
@@ -162,6 +196,11 @@ export const districtMockData = [
     person_assaulted_date: null,
     assigned_io: 'W/API Snehal Kadam (#MH-PN-7011)',
     compensation_status: 'MPBCDC Entrepreneurship Subsidy Guidance Dispatched',
+    recommended_action: 'information_only',
+    explanation_text: 'Welfare scheme guidance request — non-crime. Complainant seeking education hostel stipend. Low SVI. Information and referral to Social Welfare Department Pune resolved this case.',
+    flags: {
+      welfare_scheme_query: { present: true, confidence: 0.98, signals: ['Caller requested Swadhar Scheme enrollment information', 'No offence or violence reported'] },
+    },
     evidence_files: [],
     riskTier: 'low',
     risk_tier: 'low',
@@ -176,6 +215,7 @@ export const districtMockData = [
     created_at: '2026-08-31T09:00:00',
     victimAgeGroup: '20-25',
     isSilentSignal: false,
+    is_silent_signal: false,
     incidentType: 'Facilitation for Dr. Babasaheb Ambedkar Swadhar Scheme & Self-Employment Loan',
     incident_description: 'Complainant seeking government subsidy and educational hostel stipend under Dr. Babasaheb Ambedkar Swadhar Scheme in Pune.',
     case_summary: 'Application processed through Social Welfare Department, Pune Division (Dr. Ambedkar Bhavan, Agarkar Nagar). Case closed upon successful enrollment.',
@@ -195,6 +235,13 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-30T16:45:00',
     assigned_io: 'DySP Arvind Jagtap (#MH-PN-3019)',
     compensation_status: 'Free Legal Aid (Pune District Legal Services Authority DLSA)',
+    recommended_action: 'legal_aid',
+    explanation_text: 'Government medical officer targeted with fabricated complaints and caste slurs. Political motive detected. Free Legal Aid through DLSA Pune is the primary recommendation. Police protection for duty may be required.',
+    flags: {
+      witness_intimidation: { present: true, confidence: 0.83, signals: ['Complainant received threatening WhatsApp messages', 'Audio recording captures coercive language'] },
+      institutional_failure: { present: true, confidence: 0.74, signals: ['Hospital administration delayed complaint acknowledgment by 48 hours'] },
+      caste_based_discrimination: { present: true, confidence: 0.89, signals: ['Caste slurs in audio evidence', 'Fabricated complaint filed citing caste identity'] },
+    },
     evidence_files: [
       { id: 108, file_name: 'threatening_whatsapp_and_audio.mp3', file_type: 'site_photo', file_size_bytes: 980000, uploaded_at: '2026-08-31T08:40:00' },
     ],
@@ -211,6 +258,7 @@ export const districtMockData = [
     created_at: '2026-08-31T08:30:00',
     victimAgeGroup: '30-40',
     isSilentSignal: false,
+    is_silent_signal: false,
     incidentType: 'Criminal intimidation, character defamation & obstruction of medical officer on duty',
     incident_description: 'Government Medical Officer Dr. Waghmare was targeted with fabricated allegations and caste slurs by local political elements after declining unlawful medical certificate demands.',
     case_summary: 'District Civil Surgeon Pune informed. Legal aid appointed by District Court Pune. FIR registered under SC/ST Act sections 3(1)(p) and 3(1)(q).',
@@ -230,6 +278,13 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-28T11:00:00',
     assigned_io: 'SDPO Shirur Division (#MH-PN-5521)',
     compensation_status: 'Land Restoration Sanctioned by Sub-Divisional Officer (SDO)',
+    recommended_action: 'police_intervention',
+    explanation_text: 'Illegal encroachment of 4-acre Dalit agricultural land using heavy earthmovers. High SVI — destruction of livelihood, multiple perpetrators. Police-escorted revenue panchnama and boundary restoration is the recommended course of action.',
+    flags: {
+      land_dispossession: { present: true, confidence: 0.97, signals: ['7/12 extract confirms complainant as registered land owner', 'Revenue officer confirmed forcible trespass'] },
+      destruction_of_property: { present: true, confidence: 0.91, signals: ['Standing crops destroyed by earthmovers', 'Estimated crop loss ₹2.4 Lakh per Tahsildar report'] },
+      caste_based_discrimination: { present: true, confidence: 0.86, signals: ['Accused stated "SC land has no protection" per witness statement'] },
+    },
     evidence_files: [
       { id: 109, file_name: '7_12_land_extract_and_panchanama.pdf', file_type: 'witness_statement', file_size_bytes: 750000, uploaded_at: '2026-08-30T16:00:00' },
       { id: 110, file_name: 'tahsildar_demarcation_map.pdf', file_type: 'site_photo', file_size_bytes: 1120000, uploaded_at: '2026-08-30T16:05:00' },
@@ -247,8 +302,9 @@ export const districtMockData = [
     created_at: '2026-08-30T15:30:00',
     victimAgeGroup: '55-65',
     isSilentSignal: false,
+    is_silent_signal: false,
     incidentType: 'Illegal dispossession & destruction of crops on Dalit agricultural land',
-    incident_description: 'Complainant 4-acre agricultural land at Shikrapur was encroached using heavy earthmovers andstanding crops destroyed by non-tribal developers.',
+    incident_description: 'Complainant 4-acre agricultural land at Shikrapur was encroached using heavy earthmovers and standing crops destroyed by non-tribal developers.',
     case_summary: 'Revenue Panchanama completed with Tahsildar Shirur. Boundary restored under police protection. Accused booked under SC/ST Act Section 3(1)(g).',
     status: 'in_progress',
     currentLevel: 1,
@@ -267,6 +323,14 @@ export const districtMockData = [
     person_assaulted_date: '2026-08-30T19:20:00',
     assigned_io: 'ACP Swargate Division (#MH-PN-8890)',
     compensation_status: 'Interim Relief ₹1,00,000 Disbursed (SC/ST PoA Rule 12(4))',
+    recommended_action: 'emergency_escalation',
+    explanation_text: 'Critical case. Dalit woman attacked near residence with sexual violence indicators. Silent distress signal confirmed. Dossier is court-sealed. Full witness protection and immediate DBT Stage 1 disbursement recommended by Special Court.',
+    flags: {
+      physical_violence: { present: true, confidence: 0.98, signals: ['Assault resulting in injuries — Aundh Hospital MLC confirms bruising', 'Statement recorded under Section 183 BNSS before Judicial Magistrate'] },
+      sexual_violence_indicator: { present: true, confidence: 0.87, signals: ['Outrage of modesty — Section 3(1)(w)(i) invoked', 'Victim requested confidentiality during statement'] },
+      silent_distress_signal: { present: true, confidence: 0.93, signals: ['AI pipeline flagged absence of verbal response with background emotional sounds', 'WhatsApp distress shortcode triggered by victim'] },
+      witness_intimidation: { present: true, confidence: 0.82, signals: ['2 neighbours refused to give statement initially', 'Suspect contacted victim\'s family — LOC issued for absconder'] },
+    },
     evidence_files: [
       { id: 111, file_name: 'victim_statement_under_164_crpc.pdf', file_type: 'witness_statement', file_size_bytes: 410000, uploaded_at: '2026-08-30T21:00:00' },
       { id: 112, file_name: 'aundh_hospital_medical_certificate.pdf', file_type: 'medical_report', file_size_bytes: 890000, uploaded_at: '2026-08-30T21:10:00' },
@@ -284,6 +348,7 @@ export const districtMockData = [
     created_at: '2026-08-30T20:00:00',
     victimAgeGroup: '30-40',
     isSilentSignal: true,
+    is_silent_signal: true,
     incidentType: 'Assault on Dalit woman with intent to outrage modesty & casteist violence',
     incident_description: 'Complainant Smt. Vandana Bhalerao was attacked and verbally abused with caste obscenities near Janwadi by 3 intoxicated individuals.',
     case_summary: 'Judicial Magistrate statement under Section 183 BNSS recorded. Prime accused arrested and remanded to judicial custody at Yerawada Central Prison.',
@@ -293,5 +358,6 @@ export const districtMockData = [
     current_level: 1,
     is_locked: true,
     forwarded_to_swo: true,
+    judiciary_directive: 'Direct immediate DBT compensation disbursement under SC/ST PoA Rule 12(4). Provide security & counseling. Enroll victim under Sanjay Gandhi Niradhar Anudan Yojana.',
   },
 ];

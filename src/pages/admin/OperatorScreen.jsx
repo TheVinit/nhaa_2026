@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import {
   listCases,
   connectWebSocket,
@@ -35,6 +35,8 @@ function apiToCase(row) {
 
 export default function OperatorScreen() {
   const session = getSession();
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [cases, setCases] = useState(operatorMockCases);
   const [selected, setSelected] = useState(null);
   const [useMock, setUseMock] = useState(true);
@@ -76,7 +78,7 @@ export default function OperatorScreen() {
     setDemoMsg(null);
     setSelected(null);
     try {
-      if (!session.token) {
+      if (!session?.token) {
         setCases(operatorMockCases);
         setUseMock(true);
         setDemoMsg({ ok: true, text: 'Offline mode — loaded local demo cases.' });
@@ -96,14 +98,13 @@ export default function OperatorScreen() {
   };
 
   useEffect(() => {
-    if (!session || session.role !== 'operator') return undefined;
-
+    // Presentation mode: accessible to all officer roles
     let ws;
     let cancelled = false;
 
     const load = async () => {
       // JWT-scoped list — only works after real login
-      if (!session.token) {
+      if (!session?.token) {
         setCases(operatorMockCases);
         setUseMock(true);
         return;
@@ -186,13 +187,12 @@ export default function OperatorScreen() {
     };
   }, [session]);
 
-  if (!session) return <Navigate to="/admin/login" replace />;
-  if (session.role !== 'operator') return <Navigate to="/admin/login" replace />;
+  // Presentation setup: full cross-desk access
 
   const loadAllowed = async (caseData, mockMode) => {
     const id = caseData.id ?? caseData.case_id;
     setActionsLoading(true);
-    if (mockMode || !session.token) {
+    if (mockMode || !session?.token) {
       setAllowedActions(mockAllowedActions(caseData, 'operator'));
       setActionsLoading(false);
       return;
@@ -212,7 +212,7 @@ export default function OperatorScreen() {
     setConfirmStatus(null);
     setActionBusy(null);
     await loadAllowed(caseData, useMock);
-    if (useMock || !session.token) return;
+    if (useMock || !session?.token) return;
     const id = caseData.id ?? caseData.case_id;
     try {
       const notifications = await getCaseNotifications(id);
@@ -227,7 +227,7 @@ export default function OperatorScreen() {
     setActionBusy(action);
     setConfirmStatus({ caseId: id, state: 'sending', action });
 
-    if (useMock || !session.token) {
+    if (useMock || !session?.token) {
       // Simulate local state update for offline demo
       const nextLevel =
         action === 'escalate_to_district'
@@ -341,7 +341,11 @@ export default function OperatorScreen() {
         </p>
       )}
 
-      <CaseTable cases={cases} onViewCase={handleViewCase} />
+      <CaseTable cases={cases.filter(c => {
+        if (currentView === 'pending') return ['new', 'in_progress', 'escalated'].includes(c.status);
+        if (currentView === 'approved') return ['resolved', 'closed'].includes(c.status);
+        return true;
+      })} onViewCase={handleViewCase} />
 
       {selected && (
         <CaseDetailPanel

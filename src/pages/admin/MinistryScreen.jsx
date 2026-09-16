@@ -6,9 +6,9 @@ import TrendChart from '../../components/admin/TrendChart';
 import StateComparisonTable from '../../components/admin/StateComparisonTable';
 
 export default function MinistryScreen() {
-  const [nationalStats, setNationalStats] = useState(null);
-  const [nationalTrend, setNationalTrend] = useState([]);
-  const [stateTable, setStateTable] = useState([]);
+  const [nationalStats, setNationalStats] = useState(() => ministryMockData.nationalStats);
+  const [nationalTrend, setNationalTrend] = useState(() => ministryMockData.nationalTrend);
+  const [stateTable, setStateTable] = useState(() => ministryMockData.stateTable);
   const [useMock, setUseMock] = useState(false);
 
   useEffect(() => {
@@ -22,16 +22,13 @@ export default function MinistryScreen() {
           getStateComparison(),
         ]);
         if (!cancelled) {
-          setNationalStats(statsRes);
-          setNationalTrend(trendRes);
-          setStateTable(statesRes);
+          if (statsRes) setNationalStats(statsRes);
+          if (Array.isArray(trendRes) && trendRes.length > 0) setNationalTrend(trendRes);
+          if (Array.isArray(statesRes) && statesRes.length > 0) setStateTable(statesRes);
           setUseMock(false);
         }
       } catch {
         if (!cancelled) {
-          setNationalStats(ministryMockData.nationalStats);
-          setNationalTrend(ministryMockData.nationalTrend);
-          setStateTable(ministryMockData.stateTable);
           setUseMock(true);
         }
       }

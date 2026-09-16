@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Scale, CheckCircle2, AlertTriangle,
   Clock, TrendingUp, BarChart3, RefreshCw,
@@ -58,6 +59,8 @@ const mergeWithMock = (apiCases = []) => {
 };
 
 export default function StateScreen() {
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [stats, setStats] = useState(stateMockData.stats);
   const [trend, setTrend] = useState(stateMockData.trend);
   const [districtTable, setDistrictTable] = useState(stateMockData.districtTable);
@@ -118,6 +121,11 @@ export default function StateScreen() {
   };
 
   const filteredCases = cases.filter((c) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(c.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(c.status)) return false;
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchId = String(c.id).toLowerCase().includes(q);

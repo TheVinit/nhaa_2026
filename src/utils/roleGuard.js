@@ -17,60 +17,36 @@
  * SYSTEM sysadmin    → ALL desks (wildcard '*')
  */
 
-const IS_DEMO_MODE = true;
-
 export const ROLE_CLEARANCE = {
-  operator:    ['/admin/operator'],
-  io:          ['/admin/io'],
-  dsp:         ['/admin/dsp', '/admin/district'],
-  acp:         ['/admin/acp'],
-  sp:          ['/admin/sp', '/admin/state'],
-  ig:          ['/admin/ig', '/admin/ministry'],
-  director:    ['/admin/director'],
-  judiciary:   ['/admin/judiciary'],
-  swo:         ['/admin/swo'],
-  sysadmin:    ['*'], // wildcard — full cross-tier access
+  operator:    ['*'],
+  io:          ['*'],
+  dsp:         ['*'],
+  acp:         ['*'],
+  sp:          ['*'],
+  ig:          ['*'],
+  director:    ['*'],
+  judiciary:   ['*'],
+  swo:         ['*'],
+  sysadmin:    ['*'],
   super_admin: ['*'],
 };
 
-const ALL_ADMIN_PATHS = [
-  '/admin/operator', '/admin/io', '/admin/dsp', '/admin/district',
-  '/admin/acp', '/admin/sp', '/admin/state', '/admin/ig',
-  '/admin/ministry', '/admin/director', '/admin/judiciary',
-  '/admin/swo', '/admin/sysadmin',
-];
-
 /**
  * Returns true if the given role is allowed to access the given pathname.
- * DEMO MODE: All authenticated users can access every admin desk for
- * SIH judge presentation purposes. No authorization walls.
+ * Presentation Setup Bypass: All officer roles have full cross-desk clearance.
  */
 export function hasRouteAccess(role, pathname) {
-  if (!role) return false;
-
-  // DEMO BYPASS: Allow any authenticated role to access any admin screen
-  // for the SIH 2026 judge presentation. No role compartmentalization.
-  if (IS_DEMO_MODE) {
-    const isAdminPath = ALL_ADMIN_PATHS.some((prefix) => pathname.startsWith(prefix));
-    if (isAdminPath) return true;
-  }
-
-  const normalizedRole = String(role).toLowerCase().trim();
-  const allowed = ROLE_CLEARANCE[normalizedRole];
-  if (!allowed) return false;
-  if (allowed.includes('*')) return true;
-  return allowed.some((prefix) => pathname.startsWith(prefix));
+  return true;
 }
 
 /**
  * Returns the primary (home) route for a given role.
- * Used to redirect unauthorised access back to the user's own desk.
  */
 export function getHomeRoute(role) {
   const normalizedRole = String(role || '').toLowerCase().trim();
   const clearance = ROLE_CLEARANCE[normalizedRole];
-  if (!clearance) return '/admin/login';
-  if (clearance.includes('*')) return '/admin/sysadmin';
+  if (!clearance) return '/admin/operator';
+  if (clearance.includes('*')) return '/admin/dsp';
   return clearance[0];
 }
 
@@ -78,5 +54,6 @@ export function getHomeRoute(role) {
  * All roles can be selected directly for evaluation and fast triage.
  */
 export const SENIOR_ROLES = new Set();
+
 
 

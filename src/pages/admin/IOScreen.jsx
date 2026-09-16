@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, MapPin, FolderOpen, Search, ShieldCheck, ArrowRight, User, Phone, CheckCircle2, FileText } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { RefreshCw, MapPin, FolderOpen, Search, ShieldCheck, ArrowRight, User, Phone, CheckCircle2, FileText, Clock, Shield } from 'lucide-react';
 import CaseSortBar from '../../components/admin/CaseSortBar';
 import CaseEmailButton from '../../components/admin/CaseEmailButton';
 import { listCases, connectWebSocket, postCaseAction, updateCaseExamine } from '../../services/api';
 import { districtMockData } from '../../data/districtCases';
 import { getSession } from '../../utils/adminAuth';
+import { mockAllowedActions } from '../../utils/caseLevel';
 import RiskBadge from '../../components/admin/RiskBadge';
 import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
 
@@ -60,6 +62,8 @@ const mergeWithMock = (apiCases = []) => {
 
 export default function IOScreen() {
   const session = getSession();
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [cases, setCases] = useState(() => mergeWithMock([]));
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -67,6 +71,7 @@ export default function IOScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
+  const [allowedActions, setAllowedActions] = useState([]);
 
   const loadData = async () => {
     try {
@@ -96,6 +101,11 @@ export default function IOScreen() {
   }, []);
 
   const filteredCases = cases.filter((c) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(c.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(c.status)) return false;
+    }
     if (filterTier !== 'all' && c.risk_tier !== filterTier) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -382,7 +392,10 @@ export default function IOScreen() {
                         <CaseEmailButton caseData={c} compact />
                         <button
                           type="button"
-                          onClick={() => setSelectedCase(c)}
+                          onClick={() => {
+                            setSelectedCase(c);
+                            setAllowedActions(mockAllowedActions(c, session?.role || 'io'));
+                          }}
                         style={{
                           background: 'rgb(0, 115, 230)',
                           color: '#FFFFFF',
@@ -414,10 +427,12 @@ export default function IOScreen() {
       {selectedCase && (
         <CaseDetailPanel
           caseData={selectedCase}
-          onClose={() => setSelectedCase(null)}
+          mode="io"
+          allowedActions={allowedActions}
+          onClose={() => { setSelectedCase(null); setAllowedActions([]); }}
           onRefresh={loadData}
           onAction={async (action, c) => {
-            await postCaseAction(c.numericId, action, 'Action submitted from IO terminal');
+            await postCaseAction(c.numericId ?? String(c.id).replace('NHAA-', ''), action, 'Action submitted from IO terminal');
             loadData();
           }}
         />
