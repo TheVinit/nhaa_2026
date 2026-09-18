@@ -97,7 +97,7 @@ function apiToCase(apiCase) {
 
 export default function DistrictScreen() {
   const session = getSession();
-  const [cases, setCases] = useState([]);
+  const [cases, setCases] = useState(districtMockData);
   const [useMock, setUseMock] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -233,14 +233,15 @@ export default function DistrictScreen() {
 
   const handleViewCase = async (row) => {
     const numericId = String(row.id).replace(/^NHAA-/, '');
+    const deskRole = session?.role || 'dsp';
     setSelected({ ...row, id: numericId, _displayId: row.id });
     setAllowedActions([]);
     setActionsLoading(true);
-    const currentLevel = row.currentLevel ?? 0;
 
-    const fallback = currentLevel < 1
-      ? ['escalate_to_dsp']
-      : mockAllowedActions({ id: numericId, risk_tier: row.riskTier, current_level: 'dsp' }, 'dsp');
+    const fallback = mockAllowedActions(
+      { ...row, id: numericId, current_level: row.current_level ?? row.currentLevel ?? 1 },
+      deskRole
+    );
 
     if (useMock || !session?.token) {
       setAllowedActions(fallback);
@@ -251,10 +252,7 @@ export default function DistrictScreen() {
       const full = await getFullCase(numericId);
       setSelected((cur) => (cur && cur.id === numericId ? { ...cur, ...full } : cur));
       const res = await getAllowedActions(numericId);
-      let fromApi = res?.allowed_actions || [];
-      if (currentLevel < 1 && !fromApi.includes('escalate_to_district')) {
-        fromApi = ['escalate_to_district', ...fromApi];
-      }
+      const fromApi = res?.allowed_actions || [];
       setAllowedActions(fromApi.length > 0 ? fromApi : fallback);
     } catch {
       setAllowedActions(fallback);

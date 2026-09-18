@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, MapPin, FolderOpen, Lock, HeartHandshake, ShieldCheck, User, Phone, Shield, FileText } from 'lucide-react';
 import { listCases, connectWebSocket, getCaseStats, getCaseTrend, getStateComparison } from '../../services/api';
 import { districtMockData } from '../../data/districtCases';
@@ -53,6 +54,8 @@ const mergeWithMock = (apiCases = []) => {
 };
 
 export default function DirectorScreen() {
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [cases, setCases] = useState(() => mergeWithMock([]));
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -109,6 +112,12 @@ export default function DirectorScreen() {
   };
 
   const filteredCases = cases.filter((c) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(c.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(c.status)) return false;
+    }
+
     if (selectedTierFilter === 'critical') return c.risk_tier === 'critical' || c.svi_score >= 75;
     if (selectedTierFilter === 'locked') return c.is_locked;
     if (selectedTierFilter === 'swo') return c.forwarded_to_swo;

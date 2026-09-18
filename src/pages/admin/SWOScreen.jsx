@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, Scale, MapPin, HeartHandshake, ShieldCheck, User, Phone, CheckCircle2, IndianRupee } from 'lucide-react';
 import { listCases, connectWebSocket } from '../../services/api';
 import { districtMockData } from '../../data/districtCases';
@@ -54,6 +55,8 @@ const mergeWithMock = (apiCases = []) => {
 };
 
 export default function SWOScreen() {
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'overview';
   const [cases, setCases] = useState(() => mergeWithMock([]));
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -92,6 +95,12 @@ export default function SWOScreen() {
   const forwardedCases = cases.filter((c) => c.forwarded_to_swo || c.compensation_status);
 
   const displayedCases = (filterMode === 'forwarded' ? forwardedCases : cases).filter((c) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(c.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(c.status)) return false;
+    }
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchId = String(c.id).toLowerCase().includes(q);

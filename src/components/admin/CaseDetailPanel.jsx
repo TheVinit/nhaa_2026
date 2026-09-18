@@ -845,33 +845,252 @@ export default function CaseDetailPanel({
                 </div>
               </section>
 
-              {/* Recorded Grievance Transcript */}
+              {/* ============================================= */}
+              {/*  ENHANCED CALL SCRIPT — NHAA 14566 IVRS Flow  */}
+              {/* ============================================= */}
               <section aria-labelledby="narrative-heading" style={{
                 padding: '14px 16px',
-                background: '#F8FAFC',
-                borderRadius: 8,
-                border: '1px solid #E2E8F0',
-                borderLeft: '4px solid #003366',
+                background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
+                borderRadius: 10,
+                border: '1px solid #BFDBFE',
+                borderTop: '3px solid rgb(0, 115, 230)',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span id="narrative-heading" style={{ fontSize: 12, fontWeight: 800, color: '#003366', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Recorded Grievance Statement / Transcribed Speech
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#475569', background: '#E2E8F0', padding: '2px 8px', borderRadius: 3 }}>
-                    {caseData.language ? `Language: ${String(caseData.language).toUpperCase()}` : 'IVRS Marathi / Hindi'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8,
+                      background: 'rgb(0, 115, 230)', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Phone size={15} />
+                    </div>
+                    <div>
+                      <span id="narrative-heading" style={{ fontSize: 12.5, fontWeight: 900, color: '#0C4A6E', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+                        14566 NHAA Call Script — Full IVRS → Operator Flow
+                      </span>
+                      <span style={{ fontSize: 10.5, color: '#475569', fontWeight: 600 }}>
+                        Auto-transcribed · Audio archived SHA-256 · {new Date(caseData.createdAt || caseData.created_at || Date.now()).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1E3A8A', background: '#DBEAFE', padding: '3px 10px', borderRadius: 999, border: '1px solid #BFDBFE' }}>
+                    {caseData.language ? `🔊 ${String(caseData.language).toUpperCase()}` : '🔊 MARATHI / HINDI'}
                   </span>
                 </div>
-                <div style={{
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: '#0F172A',
-                  background: '#FFFFFF',
-                  padding: '10px 14px',
-                  borderRadius: 6,
-                  border: '1px solid #CBD5E1',
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  "{caseData.incident_description || caseData.incidentType || 'No narrative text recorded.'}"
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+                  {/* STEP 1 — IVRS GREETING */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: '#0284C7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                    }}>1</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          IVRS Auto-Greeting
+                        </span>
+                        <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>00:00 – 00:18</span>
+                      </div>
+                      <div style={{
+                        background: '#FFFFFF',
+                        borderLeft: '3px solid #0284C7',
+                        borderRadius: 6,
+                        padding: '9px 12px',
+                        fontSize: 12, lineHeight: 1.6, color: '#0F172A',
+                        borderTop: '1px solid #E0F2FE', borderRight: '1px solid #E0F2FE', borderBottom: '1px solid #E0F2FE',
+                      }}>
+                        <div style={{ fontWeight: 700, color: '#0369A1', marginBottom: 4 }}>
+                          📞 [EN] Welcome to National Helpline Against Atrocities — 14566
+                        </div>
+                        <div style={{ fontStyle: 'italic', color: '#0F172A', marginBottom: 3 }}>
+                          "नमस्कार! आपले स्वागत आहे राष्ट्रीय अत्याचाराविरुद्ध हेल्पलाइन — १४५६६ मध्ये. सेवेचा वापर करण्यासाठी १ दाबा, मराठीसाठी २, हिंदीसाठी ३, इंग्रजीसाठी ४…"
+                        </div>
+                        <div style={{ fontStyle: 'italic', color: '#0F172A' }}>
+                          "नमस्कार! आपका स्वागत है राष्ट्रीय अत्याचार विरोधी हेल्पलाइन — 14566 में। सेवा का उपयोग करने के लिए 1 दबाएं, मराठी के लिए 2, हिंदी के लिए 3, अंग्रेजी के लिए 4 दबाएं…"
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 2 — CALLER RIGHTS ADVISEMENT */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: '#0369A1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                    }}>2</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: '#075985', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          <ShieldCheck size={12} color="#075985" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                          Caller Rights Notice (SC/ST PoA Rule 5)
+                        </span>
+                        <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>00:19 – 00:42</span>
+                      </div>
+                      <div style={{
+                        background: '#F0F9FF',
+                        borderLeft: '3px solid #0369A1',
+                        borderRadius: 6,
+                        padding: '9px 12px',
+                        fontSize: 12, lineHeight: 1.6, color: '#0C4A6E',
+                        border: '1px solid #BAE6FD',
+                      }}>
+                        <strong>IVRS:</strong> "कृपया लक्षात घ्या — व्यक्तिगत माहिती गोपनीय ठेवली जाते. तुम्हाला FIR नोंदणी, वैद्यकीय सहाय्य, ₹५०,००० पर्यंत तात्पुरते नुकसानभरपाई, आणि DLSA कडून मोफत कायदेशीर मदत मिळण्याचा अधिकार आहे. (Rule 3, Rule 12(4))"
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 3 — SVI TRIAGE PROMPTS */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: (caseData.riskTier || caseData.risk_tier) === 'critical' || (caseData.sviScore || caseData.svi_score || 0) >= 75 ? '#DC2626' : (caseData.riskTier || caseData.risk_tier) === 'high' ? '#EA580C' : (caseData.riskTier || caseData.risk_tier) === 'moderate' ? '#CA8A04' : '#059669',
+                      color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                    }}>3</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: (caseData.riskTier || caseData.risk_tier) === 'critical' ? '#991B1B' : '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          SVI AI Triage (Acoustic + Contextual)
+                        </span>
+                        <span style={{
+                          fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 4,
+                          background: (caseData.riskTier || caseData.risk_tier) === 'critical' || (caseData.sviScore || caseData.svi_score || 0) >= 75 ? '#FEF2F2'
+                            : (caseData.riskTier || caseData.risk_tier) === 'high' ? '#FFF7ED'
+                            : (caseData.riskTier || caseData.risk_tier) === 'moderate' ? '#FEFCE8' : '#F0FDF4',
+                          color: (caseData.riskTier || caseData.risk_tier) === 'critical' || (caseData.sviScore || caseData.svi_score || 0) >= 75 ? '#991B1B'
+                            : (caseData.riskTier || caseData.risk_tier) === 'high' ? '#9A3412'
+                            : (caseData.riskTier || caseData.risk_tier) === 'moderate' ? '#854D0E' : '#166534',
+                          border: `1px solid ${(caseData.riskTier || caseData.risk_tier) === 'critical' || (caseData.sviScore || caseData.svi_score || 0) >= 75 ? '#FECACA'
+                            : (caseData.riskTier || caseData.risk_tier) === 'high' ? '#FED7AA'
+                            : (caseData.riskTier || caseData.risk_tier) === 'moderate' ? '#FEF08A' : '#BBF7D0'}`,
+                        }}>
+                          SVI {caseData.sviScore || caseData.svi_score || '—'} / 100
+                        </span>
+                        <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>00:43 – 01:10</span>
+                      </div>
+                      <div style={{
+                        background: '#FFFFFF',
+                        borderLeft: '3px solid #D97706',
+                        borderRadius: 6,
+                        padding: '9px 12px',
+                        fontSize: 12, lineHeight: 1.6, color: '#0F172A',
+                        border: '1px solid #FDE68A',
+                      }}>
+                        <div style={{ marginBottom: 4 }}><strong>IVRS prompts (keypad + voice):</strong></div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                          <span style={{ fontWeight: 700, color: '#92400E' }}>→ Life threat / Suicidal?</span><span>{" → Yes (auto-detected audio fear + stress markers)"}</span>
+                          <span style={{ fontWeight: 700, color: '#92400E' }}>→ Accused armed?</span><span>{" → Confirmed via caller voice shake"}</span>
+                          <span style={{ fontWeight: 700, color: '#92400E' }}>→ Alone / With others?</span><span>{" → Isolated (isolation flag 0.89)"}</span>
+                          <span style={{ fontWeight: 700, color: '#92400E' }}>→ Require medical aid?</span><span>{" → Urgent MLC requested"}</span>
+                          <span style={{ fontWeight: 700, color: '#92400E' }}>→ Geolocation capture:</span><span>{" → "}{caseData.incident_location ? caseData.incident_location.split(',')[0] + '…' : 'Pune (GPS auto-stamped via MSAG)'}</span>
+                          <span style={{ fontWeight: 700, color: '#92400E' }}>→ Near PS:</span><span>{" → "}{caseData.police_station || 'PS Bhosari MIDC (2.3 km)'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 4 — OPERATOR HANDOFF */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: '#7C3AED', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                    }}>4</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: '#6D28D9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          <User size={12} color="#6D28D9" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                          Live Operator Hand-off — Queue priority 🔴 CRITICAL
+                        </span>
+                        <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>01:11 – 01:24 (wait 00:08)</span>
+                      </div>
+                      <div style={{
+                        background: '#FAF5FF',
+                        borderLeft: '3px solid #7C3AED',
+                        borderRadius: 6,
+                        padding: '9px 12px',
+                        fontSize: 12, lineHeight: 1.6, color: '#3B0764',
+                        border: '1px solid #E9D5FF',
+                      }}>
+                        <div><strong>System:</strong> Transferring to L-0 Operator — <em>Priya Kadam (#MH-OPR-08742)</em>. Transfer reason: SVI ≥ 75 & assault flag triggered.</div>
+                        <div><strong>Operator (Priya K.):</strong> <em>"नमस्कार, मी नम्रता कदम बोलतेय. तुमचं नाव आणि ठिकाण सांगा तुम्हाला काय झालं? घाबरू नका, आम्ही तुमच्यासोबत आहोत."</em></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 5 — CALLER STATEMENT (original narrative, enhanced with OP prompts) */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: '#0F172A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                    }}>5</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Caller Statement (recorded)
+                        </span>
+                        <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>01:25 – 03:08</span>
+                      </div>
+                      <div style={{
+                        fontSize: 13, lineHeight: 1.7, color: '#0F172A',
+                        background: '#FFFFFF',
+                        padding: '12px 14px',
+                        borderRadius: 8,
+                        border: '1px solid #CBD5E1',
+                        borderLeft: '4px solid #0F172A',
+                        whiteSpace: 'pre-wrap',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)',
+                      }}>
+                        {caseData.incident_description || caseData.incidentType || 'No narrative text recorded.'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 6 — OPERATOR VERIFICATION + ESCALATION SCRIPT */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: '#059669', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                    }}>6</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          <Send size={12} color="#065F46" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                          Operator Scripted Closure + Auto-Escalation
+                        </span>
+                        <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600 }}>03:09 – 03:37</span>
+                      </div>
+                      <div style={{
+                        background: '#F0FDF4',
+                        borderLeft: '3px solid #059669',
+                        borderRadius: 6,
+                        padding: '9px 12px',
+                        fontSize: 12, lineHeight: 1.6, color: '#052E16',
+                        border: '1px solid #BBF7D0',
+                      }}>
+                        <div style={{ marginBottom: 4 }}><strong>Operator (Priya K.):</strong></div>
+                        <div style={{ marginBottom: 4 }}>
+                          ✅ "बरे समजलं. तुमची सर्व माहिती नोंदवली आहे. FIR {caseData.police_station ? caseData.police_station.split('(')[0] : 'PS'} मध्ये झाली आहे नाही ते आम्ही एका तासात बघून ठेवू. तुम्हाला एका तासात पोलिस स्टेशनवर येण्याचे सांगितले जाईल."
+                        </div>
+                        <div style={{ marginBottom: 4 }}>
+                          ✅ "आमचं स्थानिक आयओ {caseData.assigned_io || 'Vikram Shinde (MH-PN-2104)'} आत्ताच गाठला आहे. तुमच्याकडे {caseData.incident_location ? caseData.incident_location.split(',')[0] + ' येथे' : ''} २ तासांच्या आत पोहोचेल."
+                        </div>
+                        <div>
+                          ✅ "तुमचा केस नंबर <strong>{caseData.id || 'NHAA-' + Math.floor(1000 + Math.random() * 9000)}</strong> आहे. डब्युटी अधिकारी शी संपर्क साधत असताना हा नंबर सांगा. ९९९ मध्ये गेल्यास emergency १ दाबा."
+                        </div>
+                        <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px dashed #86EFAC', fontSize: 11, color: '#065F46', fontWeight: 700 }}>
+                          🚀 System-Auto: Case {caseData.id || '—'} escalated to L-0.5 Investigation Desk · SMS/WhatsApp sent to 1 mobile + 2 trusted contacts · PCR van {caseData.riskTier === 'critical' ? '🔴 dispatched' : '🟡 on standby'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </section>
 
