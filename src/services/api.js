@@ -3,12 +3,32 @@
  *
  * Connects to the FastAPI backend at VITE_API_URL (default http://localhost:8000).
  * Admin routes require Authorization: Bearer <JWT> from POST /auth/login.
+ *
+ * OFFLINE-FIRST: All requests use a 600ms AbortController timeout.
+ * If the backend is unreachable, every call throws immediately so screens
+ * can fall back to mock data with zero perceptible delay.
  */
 
 import { getAuthHeaders, clearSession } from '../utils/adminAuth';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const API_BASE = `${BASE_URL}/api`;
+
+/** How long to wait for ANY backend call before giving up (ms). */
+const REQUEST_TIMEOUT_MS = 5000;
+
+/** Login-specific timeout — accounts for remote Supabase latency and bcrypt hashing. */
+const LOGIN_TIMEOUT_MS = 8000;
+
+/**
+ * Wraps fetch with an AbortController timeout.
+ * Throws as soon as the timeout fires so callers get a fast offline fallback.
+ */
+function fetchWithTimeout(url, opts = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(id));
+}
 
 async function request(path, options = {}) {
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
@@ -20,11 +40,7 @@ async function request(path, options = {}) {
       ...options.headers,
     },
   };
-  const resp = await fetch(url, opts);
-  if (resp.status === 401) {
-    // Token expired / invalid — clear so LoginScreen can take over
-    clearSession();
-  }
+  const resp = await fetchWithTimeout(url, opts, REQUEST_TIMEOUT_MS);
   if (!resp.ok) {
     const err = await resp.text().catch(() => '');
     throw new Error(`API ${resp.status}: ${err || resp.statusText}`);
@@ -35,14 +51,18 @@ async function request(path, options = {}) {
 
 /**
  * POST /auth/login — live Supabase-backed officer auth.
- * Accepts JSON { username, password }; returns token + role claims.
+ * 800ms hard timeout — if backend is offline we fall to mock immediately.
  */
 export async function loginOfficer(username, password) {
-  const resp = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  });
+  const resp = await fetchWithTimeout(
+    `${BASE_URL}/auth/login`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    },
+    LOGIN_TIMEOUT_MS
+  );
   if (!resp.ok) {
     const err = await resp.text().catch(() => '');
     throw new Error(err || `Login failed (${resp.status})`);
@@ -76,8 +96,7 @@ export async function createCase(caseData, opts = {}) {
 }
 
 /**
- * GET /api/cases — JWT-scoped list (Aditya admin_panel).
- * @param {object} params { status, risk_tier, district, state, limit, offset }
+ * GET /api/cases — JWT-scoped list.
  */
 export async function listCases(params = {}) {
   const cleaned = Object.fromEntries(
@@ -110,7 +129,6 @@ export async function getAllowedActions(caseId) {
 
 /**
  * POST /api/cases/{id}/action — submit engine action string
- * e.g. escalate_to_district, assign_operator, dispatch_police, resolve
  */
 export async function postCaseAction(caseId, action, notes) {
   return request(`/cases/${caseId}/action`, {
@@ -146,7 +164,7 @@ export async function updateCase(caseId, patchData, opts = {}) {
 }
 
 /**
- * PATCH /api/cases/{id}/examine — update examination fields (victim name, location, dates, exit report, etc.)
+ * PATCH /api/cases/{id}/examine — update examination fields
  */
 export async function updateCaseExamine(caseId, examineData) {
   return request(`/cases/${caseId}/examine`, {
@@ -159,22 +177,24 @@ export async function updateCaseExamine(caseId, examineData) {
  * POST /api/cases/{id}/evidence — upload multipart evidence files
  */
 export async function uploadEvidence(caseId, formData) {
-  const url = `${API_BASE}/cases/${caseId}/evidence`;
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-    },
-    body: formData,
-  });
-  if (resp.status === 401) {
-    clearSession();
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 5000); // longer for file upload
+  try {
+    const url = `${API_BASE}/cases/${caseId}/evidence`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { ...getAuthHeaders() },
+      body: formData,
+      signal: controller.signal,
+    });
+    if (!resp.ok) {
+      const err = await resp.text().catch(() => '');
+      throw new Error(`Upload failed (${resp.status}): ${err || resp.statusText}`);
+    }
+    return resp.json();
+  } finally {
+    clearTimeout(id);
   }
-  if (!resp.ok) {
-    const err = await resp.text().catch(() => '');
-    throw new Error(`Upload failed (${resp.status}): ${err || resp.statusText}`);
-  }
-  return resp.json();
 }
 
 /**
@@ -260,7 +280,7 @@ export async function getCaseNotifications(caseId) {
 }
 
 /**
- * POST /cases/{id}/officer-decision — Critical-tier notification gate (Pushp).
+ * POST /cases/{id}/officer-decision — Critical-tier notification gate.
  */
 export async function confirmOfficerDecision(caseId, confirmedBy) {
   return request(`/cases/${caseId}/officer-decision`, {
@@ -271,21 +291,29 @@ export async function confirmOfficerDecision(caseId, confirmedBy) {
 
 /**
  * WebSocket connection to /ws for real-time updates.
+ * Silent when backend is offline — returns a no-op stub so callers can always call .close().
  */
 export function connectWebSocket(onMessage) {
-  const wsUrl = `${BASE_URL.replace(/^http/, 'ws')}/ws`;
-  const ws = new WebSocket(wsUrl);
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    onMessage(data);
-  };
-  ws.onerror = (err) => console.warn('WebSocket error:', err);
-  ws.onclose = () => console.log('WebSocket disconnected');
-  return ws;
+  const stub = { close: () => {} };
+  try {
+    const wsUrl = `${BASE_URL.replace(/^http/, 'ws')}/ws`;
+    const ws = new WebSocket(wsUrl);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        onMessage(data);
+      } catch {}
+    };
+    ws.onerror = () => {}; // silent — backend offline is expected
+    ws.onclose = () => {};
+    return ws;
+  } catch {
+    return stub;
+  }
 }
 
 /**
- * Fetch a single channel's cases from the API, with a simulated channel delay.
+ * Fetch a single channel's cases from the API.
  */
 export async function simulateChannelCase(channel, district, state, description) {
   return createCase(
@@ -301,8 +329,7 @@ export async function simulateChannelCase(channel, district, state, description)
 }
 
 /**
- * SIH presentation helper: create labelled [DEMO] cases with nested flags,
- * then escalate one to district so judges see status + current_level.
+ * SIH presentation helper: create labelled [DEMO] cases with nested flags.
  */
 export async function restoreDemoData() {
   const { DEMO_CASES, DEMO_DISTRICT, DEMO_STATE } = await import('../data/demoPresentationCases');

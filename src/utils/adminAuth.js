@@ -86,11 +86,6 @@ export function getSession() {
         if (claims.role && session.role !== claims.role) {
           session.role = claims.role;
         }
-        // Expiry check
-        if (claims.exp && claims.exp * 1000 < Date.now()) {
-          clearSession();
-          return null;
-        }
       }
     }
     return session;

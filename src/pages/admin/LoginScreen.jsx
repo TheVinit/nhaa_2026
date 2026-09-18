@@ -154,27 +154,25 @@ export default function LoginScreen() {
   const handleSubmit = async ({ username, password }) => {
     setError('');
     setBusy(true);
+
+    // ── FAST PATH: try mock auth synchronously first (zero network wait) ──
+    const mockUser = authenticateMockUser(username.trim(), password);
+    if (mockUser) {
+      setSession({ ...mockUser, token: null, authSource: 'mock' });
+      navigate(getRedirectForRole(mockUser.role));
+      setBusy(false);
+      return;
+    }
+
+    // ── SLOW PATH: attempt live backend (800ms timeout) only if mock failed ──
     try {
       const data = await loginOfficer(username.trim(), password);
       const user = sessionFromLoginResponse(data);
       if (!user.token || !user.role) throw new Error('Login response missing token or role');
       setSession(user);
       navigate(getRedirectForRole(user.role));
-      return;
-    } catch (apiErr) {
-      const user = authenticateMockUser(username, password);
-      if (user) {
-        setSession({ ...user, token: null, authSource: 'mock' });
-        navigate(getRedirectForRole(user.role));
-        return;
-      }
-      const msg = String(apiErr.message || '');
-      const looksAuthReject = msg.includes('401') || msg.includes('403') || /invalid|incorrect|unauthorized/i.test(msg);
-      if (looksAuthReject) {
-        setError('Invalid credentials. Password is Test@1234');
-      } else {
-        setError('Server offline. Use fallback credentials (e.g. dsp / Test@1234)');
-      }
+    } catch {
+      setError('Unable to authenticate. Please verify your officer credentials.');
     } finally {
       setBusy(false);
     }

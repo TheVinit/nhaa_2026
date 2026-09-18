@@ -57,13 +57,44 @@ const CHANNEL_LABELS = {
 };
 
 function normalizeFlags(flags) {
-  if (!flags || typeof flags !== 'object') return [];
-  return Object.entries(flags)
-    .map(([name, value]) => {
-      if (value && typeof value === 'object' && 'present' in value) {
+  if (!flags) return [];
+  if (Array.isArray(flags)) {
+    return flags
+      .map((f, index) => {
+        if (!f) return null;
+        if (typeof f === 'string') {
+          return { name: f, present: true, confidence: null, signals: [] };
+        }
+        const name = f.name || f.label || f.flag || `Risk Marker ${index + 1}`;
         return {
           name,
+          present: f.present !== undefined ? Boolean(f.present) : true,
+          confidence: typeof f.confidence === 'number' ? f.confidence : null,
+          signals: Array.isArray(f.signals) ? f.signals : (f.signals ? [String(f.signals)] : []),
+        };
+      })
+      .filter((f) => f && f.present);
+  }
+  if (typeof flags !== 'object') return [];
+  return Object.entries(flags)
+    .map(([key, value]) => {
+      if (!value) return null;
+      let name = key;
+      if (/^\d+$/.test(key) && value && typeof value === 'object' && value.name) {
+        name = value.name;
+      }
+      if (value && typeof value === 'object' && 'present' in value) {
+        return {
+          name: value.name || name,
           present: Boolean(value.present),
+          confidence: typeof value.confidence === 'number' ? value.confidence : null,
+          signals: Array.isArray(value.signals) ? value.signals : [],
+        };
+      }
+      if (value && typeof value === 'object') {
+        return {
+          name: value.name || name,
+          present: value.present !== undefined ? Boolean(value.present) : true,
           confidence: typeof value.confidence === 'number' ? value.confidence : null,
           signals: Array.isArray(value.signals) ? value.signals : [],
         };
@@ -75,7 +106,7 @@ function normalizeFlags(flags) {
         signals: [],
       };
     })
-    .filter((f) => f.present);
+    .filter((f) => f && f.present);
 }
 
 function actionButtonStyle(action, primary) {
@@ -1128,6 +1159,7 @@ export default function CaseDetailPanel({
 
               <EvidenceUploader
                 caseId={id}
+                initialEvidence={caseData.evidence_files || []}
                 readOnly={isJudiciary || isSWO || Boolean(caseData.is_locked)}
                 onEvidenceChanged={onRefresh}
               />

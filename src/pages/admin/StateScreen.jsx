@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Scale, CheckCircle2, AlertTriangle,
   Clock, TrendingUp, BarChart3, RefreshCw,
-  ClipboardList, MapPin, FolderOpen, Lock, Unlock, User, Phone, Shield,
+  ClipboardList, MapPin, FolderOpen, Lock, Unlock, User, Phone, Shield, LayoutDashboard,
 } from 'lucide-react';
 import { stateMockData } from '../../data/stateMockData';
 import { districtMockData } from '../../data/districtCases';
@@ -28,17 +29,21 @@ function apiToCase(apiCase) {
     person_name: apiCase.person_name || apiCase.complainant_name || 'Complainant on Record',
     complainant_name: apiCase.complainant_name || apiCase.person_name || 'Complainant on Record',
     complainant_phone: apiCase.complainant_phone || apiCase.caller_phone || '+91 98765-43210',
-    incident_location: apiCase.incident_location || `${apiCase.district || 'Central Delhi'}, ${apiCase.state || 'Delhi'}`,
-    police_station: apiCase.police_station || 'PS Central Headquarters',
-    applicable_sections: apiCase.applicable_sections || 'SC/ST (PoA) Act Sec 3(1)(r), 3(2)(v), IPC 323',
+    incident_location: apiCase.incident_location || `${apiCase.district || 'Pune District'}, ${apiCase.state || 'Maharashtra'}`,
+    police_station: apiCase.police_station || 'PS Shivajinagar / Haveli',
+    applicable_sections: apiCase.applicable_sections || 'SC/ST (PoA) Act Sec 3(1)(r), 3(2)(v), BNS 115',
     evidence_files: apiCase.evidence_files || [],
     is_locked: apiCase.is_locked ?? false,
+    recommended_action: apiCase.recommended_action || ra?.recommended_action || 'police_intervention',
+    notifications: apiCase.notifications || [],
+    flags: apiCase.flags || ra?.flags || [],
+    explanation_text: apiCase.explanation_text || ra?.explanation_text || apiCase.incident_description,
     riskTier: tier,
     risk_tier: tier,
     sviScore: score,
     svi_score: score,
-    district: apiCase.district || 'Central Delhi',
-    state: apiCase.state || 'Delhi',
+    district: apiCase.district || 'Pune District',
+    state: apiCase.state || 'Maharashtra',
     channel: apiCase.channel_of_origin || 'portal',
     channel_of_origin: apiCase.channel_of_origin || 'portal',
     createdAt: apiCase.created_at || '2026-08-31T12:00:00',
@@ -58,18 +63,21 @@ const mergeWithMock = (apiCases = []) => {
 };
 
 export default function StateScreen() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stats, setStats] = useState(stateMockData.stats);
   const [trend, setTrend] = useState(stateMockData.trend);
   const [districtTable, setDistrictTable] = useState(stateMockData.districtTable);
   const [cases, setCases] = useState(() => mergeWithMock([]));
   const [selectedCase, setSelectedCase] = useState(null);
   const [selectedState] = useState('Maharashtra');
-  const [activeTab, setActiveTab] = useState('cases'); // 'cases' | 'analytics'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
   const { lang } = useLang();
   const at = ADMIN_TRANSLATIONS[lang] || ADMIN_TRANSLATIONS.en;
+
+  const currentView = searchParams.get('view') || 'overview';
+  const activeTab = (currentView === 'overview' || currentView === 'analytics') ? 'analytics' : 'cases';
 
   const fetchData = async () => {
     try {
@@ -118,6 +126,11 @@ export default function StateScreen() {
   };
 
   const filteredCases = cases.filter((c) => {
+    if (currentView === 'pending') {
+      if (!['new', 'in_progress', 'escalated'].includes(c.status)) return false;
+    } else if (currentView === 'approved') {
+      if (!['resolved', 'closed'].includes(c.status)) return false;
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchId = String(c.id).toLowerCase().includes(q);
@@ -219,23 +232,7 @@ export default function StateScreen() {
       <div style={{ display: 'flex', gap: 12, borderBottom: '2px solid #E2E8F0', paddingBottom: 8 }}>
         <button
           type="button"
-          onClick={() => setActiveTab('cases')}
-          style={{
-            background: activeTab === 'cases' ? 'rgb(0, 115, 230)' : '#F1F5F9',
-            color: activeTab === 'cases' ? '#FFFFFF' : '#475569',
-            border: 'none',
-            borderRadius: 6,
-            padding: '8px 18px',
-            fontWeight: 800,
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          Supervisory Case Roster ({cases.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('analytics')}
+          onClick={() => setSearchParams({ view: 'overview' })}
           style={{
             background: activeTab === 'analytics' ? 'rgb(0, 115, 230)' : '#F1F5F9',
             color: activeTab === 'analytics' ? '#FFFFFF' : '#475569',
@@ -245,9 +242,31 @@ export default function StateScreen() {
             fontWeight: 800,
             fontSize: 13,
             cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
           }}
         >
-          Statewide Threat &amp; SLA Analytics
+          <LayoutDashboard size={15} /> Statewide Threat &amp; SLA Analytics
+        </button>
+        <button
+          type="button"
+          onClick={() => setSearchParams({ view: 'cases' })}
+          style={{
+            background: activeTab === 'cases' ? 'rgb(0, 115, 230)' : '#F1F5F9',
+            color: activeTab === 'cases' ? '#FFFFFF' : '#475569',
+            border: 'none',
+            borderRadius: 6,
+            padding: '8px 18px',
+            fontWeight: 800,
+            fontSize: 13,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <FolderOpen size={15} /> Supervisory Case Roster ({cases.length})
         </button>
       </div>
 

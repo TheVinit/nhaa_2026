@@ -330,7 +330,7 @@ export default function CaseExamineForm({ caseItem, onSaved, readOnly = false })
       </form>
 
       {/* ── 5. Evidence Repository Section ── */}
-      <EvidenceUploader caseId={caseItem?.id} readOnly={readOnly || isLocked} />
+      <EvidenceUploader caseId={caseItem?.id} initialEvidence={caseItem?.evidence_files || []} readOnly={readOnly || isLocked} />
     </div>
   );
 }

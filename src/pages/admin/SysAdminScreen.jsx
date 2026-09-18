@@ -7,7 +7,10 @@ import {
   ShieldCheck, FileText, TrendingUp, Wifi, Settings, UserPlus, Pencil, Trash2, Search, Copy, RotateCcw,
 } from 'lucide-react';
 import AdminSettingsModal, { getAdminTheme, setAdminTheme } from '../../components/admin/AdminSettingsModal';
-import { createOfficer, deactivateOfficer, listOfficers, updateOfficer } from '../../services/api';
+import { createOfficer, deactivateOfficer, listOfficers, updateOfficer, listCases } from '../../services/api';
+import { districtMockData } from '../../data/districtCases';
+import RiskBadge from '../../components/admin/RiskBadge';
+import CaseDetailPanel from '../../components/admin/CaseDetailPanel';
 
 const ALL_DESKS = [
   {
@@ -144,6 +147,7 @@ const TOTAL_CASES   = ALL_DESKS.reduce((a, d) => a + d.cases, 0);
 const TOTAL_PENDING = ALL_DESKS.reduce((a, d) => a + d.pending, 0);
 const TOTAL_ALERTS  = ALL_DESKS.reduce((a, d) => a + d.alerts, 0);
 const TOTAL_ACTIVE  = ALL_DESKS.reduce((a, d) => a + d.active, 0);
+const TOTAL_RESOLVED = ALL_DESKS.reduce((a, d) => a + d.resolved, 0);
 
 export default function SysAdminScreen({ embedded = false }) {
   const navigate = useNavigate();
@@ -153,6 +157,38 @@ export default function SysAdminScreen({ embedded = false }) {
   const searchParams = new URLSearchParams(location.search);
   const currentView = searchParams.get('view') || 'overview';
   const showOfficerManagement = currentView === 'officers';
+
+  const [statFilter, setStatFilter] = useState(() => {
+    const v = searchParams.get('view');
+    if (v === 'pending') return 'pending';
+    if (v === 'approved') return 'resolved';
+    if (v === 'alerts') return 'alerts';
+    if (v === 'active') return 'active';
+    return 'all';
+  });
+  const [deskFilter, setDeskFilter] = useState('all');
+  const [caseSearch, setCaseSearch] = useState('');
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [cases, setCases] = useState(() => districtMockData);
+
+  // Auto-sync statFilter from URL query param (?view=cases / ?view=pending / ?view=approved / ?view=alerts / ?view=active)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const view = params.get('view');
+    if (view === 'cases') setStatFilter('all');
+    else if (view === 'pending') setStatFilter('pending');
+    else if (view === 'approved') setStatFilter('resolved');
+    else if (view === 'alerts') setStatFilter('alerts');
+    else if (view === 'active') setStatFilter('active');
+    else if (view === 'overview' || !view) setStatFilter('all');
+  }, [location.search]);
+
+  const handleSelectStatFilter = (id) => {
+    const next = statFilter === id ? 'all' : id;
+    setStatFilter(next);
+    const viewMap = { all: 'cases', pending: 'pending', resolved: 'approved', alerts: 'alerts', active: 'active' };
+    navigate(`?view=${viewMap[next] || 'cases'}`, { replace: true });
+  };
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -470,11 +506,49 @@ export default function SysAdminScreen({ embedded = false }) {
   });
 
   const STAT_CARDS = [
-    { label: 'Total Cases',   value: TOTAL_CASES,   icon: FileText,      color: 'rgb(0, 115, 230)', bg: '#EFF6FF', border: '#DBEAFE' },
-    { label: 'Active Now',    value: TOTAL_ACTIVE,  icon: Activity,      color: '#059669',           bg: '#F0FDF4', border: '#BBF7D0' },
-    { label: 'Pending SLA',   value: TOTAL_PENDING, icon: Clock,         color: '#D97706',           bg: '#FFFBEB', border: '#FDE68A' },
-    { label: 'Active Alerts', value: TOTAL_ALERTS,  icon: AlertTriangle, color: '#DC2626',           bg: '#FEF2F2', border: '#FECACA' },
+    { id: 'all',      label: 'Total Cases',        value: TOTAL_CASES,    icon: FileText,      color: 'rgb(0, 115, 230)', bg: '#EFF6FF', border: '#DBEAFE', sub: 'All Registered Complaints' },
+    { id: 'active',   label: 'Active Under Inquiry', value: TOTAL_ACTIVE, icon: Activity,      color: '#059669',          bg: '#F0FDF4', border: '#BBF7D0', sub: 'In-Progress Desks' },
+    { id: 'pending',  label: 'Pending Action / SLA', value: TOTAL_PENDING, icon: Clock,        color: '#D97706',          bg: '#FFFBEB', border: '#FDE68A', sub: 'Awaiting Action' },
+    { id: 'alerts',   label: 'Critical Alerts',    value: TOTAL_ALERTS,   icon: AlertTriangle, color: '#DC2626',          bg: '#FEF2F2', border: '#FECACA', sub: 'SVI ≥ 75 Escalated' },
+    { id: 'resolved', label: 'Approved / Resolved', value: TOTAL_RESOLVED, icon: CheckCircle2,  color: '#7C3AED',          bg: '#F5F3FF', border: '#DDD6FE', sub: 'Action Closed & Relief' },
   ];
+
+  const filteredCases = cases.filter((c) => {
+    // 1. Stat filter
+    if (statFilter === 'active') {
+      if (c.status !== 'in_progress') return false;
+    } else if (statFilter === 'pending') {
+      if (c.status !== 'new' && c.status !== 'escalated') return false;
+    } else if (statFilter === 'alerts') {
+      const svi = Number(c.svi_score || c.sviScore || 0);
+      if (c.risk_tier !== 'critical' && c.riskTier !== 'critical' && svi < 75) return false;
+    } else if (statFilter === 'resolved') {
+      if (c.status !== 'resolved' && c.status !== 'closed') return false;
+    }
+
+    // 2. Desk filter
+    if (deskFilter !== 'all') {
+      const assignedRole = (c.assigned_role || c.assignedRole || c.current_level_role || '').toLowerCase();
+      const assignedIo = (c.assigned_io || '').toLowerCase();
+      const roleMatch = assignedRole.includes(deskFilter) || assignedIo.includes(deskFilter);
+      if (!roleMatch && deskFilter === 'dsp' && c.currentLevel !== 1 && c.current_level !== 1) return false;
+      if (!roleMatch && deskFilter === 'sp' && c.currentLevel !== 2 && c.current_level !== 2) return false;
+      if (!roleMatch && deskFilter === 'io' && !assignedIo.includes('io') && !assignedIo.includes('inspector')) return false;
+    }
+
+    // 3. Search query
+    if (caseSearch.trim()) {
+      const q = caseSearch.trim().toLowerCase();
+      return (
+        String(c.id).toLowerCase().includes(q) ||
+        (c.person_name || c.complainant_name || '').toLowerCase().includes(q) ||
+        (c.incident_location || c.district || '').toLowerCase().includes(q) ||
+        (c.police_station || '').toLowerCase().includes(q) ||
+        (c.applicable_sections || '').toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   return (
     <div
@@ -839,35 +913,505 @@ export default function SysAdminScreen({ embedded = false }) {
         </div>
         )}
 
-        {/* Top Summary Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-          {STAT_CARDS.map(({ label, value, icon: Icon, color, bg, border }) => (
-            <div key={label} style={{
-              background: '#FFFFFF',
-              border: `1px solid ${border}`,
-              borderRadius: 10,
-              padding: '18px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-            }}>
-              <div style={{
-                width: 44, height: 44,
-                borderRadius: 10,
-                background: bg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <Icon size={20} color={color} />
+        {/* Top Summary Stats — Interactive Toggle Buttons */}
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              National &amp; District Case Metrics
+            </div>
+            <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+              Click any metric card below to toggle and filter the central case registry and desk monitors.
+            </div>
+          </div>
+          {statFilter !== 'all' && (
+            <button
+              type="button"
+              onClick={() => { handleSelectStatFilter('all'); setDeskFilter('all'); }}
+              style={{
+                background: '#EFF6FF',
+                color: 'rgb(0, 115, 230)',
+                border: '1px solid #BFDBFE',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 11.5,
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <RotateCcw size={12} /> Reset Filter ({statFilter.toUpperCase()})
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
+          {STAT_CARDS.map(({ id, label, value, icon: Icon, color, bg, border, sub }) => {
+            const isSelected = statFilter === id;
+            return (
+              <div
+                key={id}
+                onClick={() => handleSelectStatFilter(id)}
+                role="button"
+                tabIndex={0}
+                title={`Click to filter by ${label}`}
+                style={{
+                  background: isSelected ? bg : '#FFFFFF',
+                  border: isSelected ? `2.5px solid ${color}` : `1px solid ${border}`,
+                  borderRadius: 10,
+                  padding: '16px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  boxShadow: isSelected ? `0 4px 14px ${color}33` : '0 1px 4px rgba(0,0,0,0.04)',
+                  cursor: 'pointer',
+                  transform: isSelected ? 'scale(1.02)' : 'none',
+                  transition: 'all 0.15s ease',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  width: 44, height: 44,
+                  borderRadius: 10,
+                  background: bg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                  border: `1px solid ${border}`,
+                }}>
+                  <Icon size={20} color={color} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
+                    <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+                    {isSelected && (
+                      <span style={{ fontSize: 9, fontWeight: 900, background: color, color: '#FFF', padding: '1px 6px', borderRadius: 999, letterSpacing: '0.04em' }}>
+                        ACTIVE
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginTop: 3 }}>{label}</div>
+            );
+          })}
+        </div>
+
+        {/* Quick View Switcher Tabs (Overview vs Case Register) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+          <button
+            type="button"
+            onClick={() => { handleSelectStatFilter('all'); navigate('?view=overview', { replace: true }); }}
+            style={{
+              background: currentView === 'overview' ? 'rgb(0, 115, 230)' : '#FFFFFF',
+              color: currentView === 'overview' ? '#FFFFFF' : '#334155',
+              border: `1px solid ${currentView === 'overview' ? 'rgb(0, 115, 230)' : '#CBD5E1'}`,
+              borderRadius: 6,
+              padding: '8px 16px',
+              fontSize: 12.5,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: currentView === 'overview' ? '0 2px 8px rgba(0,115,230,0.25)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <BarChart3 size={15} /> Overview &amp; Visual Analytics (Graphs &amp; Donut)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { handleSelectStatFilter('all'); navigate('?view=cases', { replace: true }); }}
+            style={{
+              background: currentView !== 'overview' && currentView !== 'officers' ? 'rgb(0, 115, 230)' : '#FFFFFF',
+              color: currentView !== 'overview' && currentView !== 'officers' ? '#FFFFFF' : '#334155',
+              border: `1px solid ${currentView !== 'overview' && currentView !== 'officers' ? 'rgb(0, 115, 230)' : '#CBD5E1'}`,
+              borderRadius: 6,
+              padding: '8px 16px',
+              fontSize: 12.5,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: currentView !== 'overview' && currentView !== 'officers' ? '0 2px 8px rgba(0,115,230,0.25)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <FileText size={15} /> Central Case Register &amp; Dossiers ({filteredCases.length})
+          </button>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            VIEW 1: DASHBOARD OVERVIEW & ANALYTICS (GRAPHS, DONUT & CRIME DATA)
+        ══════════════════════════════════════════════════════════════════════ */}
+        {currentView === 'overview' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 28 }}>
+            {/* Row 1: Donut Chart + Case Status Distribution */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 18 }}>
+              {/* SVI Trauma & Risk Donut Chart */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A' }}>SVI Trauma &amp; Risk Spectrum (Donut Chart)</div>
+                  <span style={{ fontSize: 10, fontWeight: 800, background: '#EFF6FF', color: 'rgb(0, 115, 230)', padding: '2px 8px', borderRadius: 4 }}>
+                    AI Acoustic &amp; Legal
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 16 }}>
+                  Real-time vulnerability distribution across all 52 national &amp; district dossiers
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', flexWrap: 'wrap', gap: 20 }}>
+                  {/* SVG Donut */}
+                  <div style={{ position: 'relative', width: 160, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="160" height="160" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
+                      {/* Background circle */}
+                      <circle cx="80" cy="80" r="58" fill="none" stroke="#F1F5F9" strokeWidth="22" />
+                      {/* Low (35%) */}
+                      <circle cx="80" cy="80" r="58" fill="none" stroke="#059669" strokeWidth="22" strokeDasharray="127.5 364.4" strokeDashoffset="0" strokeLinecap="round" />
+                      {/* Moderate (35%) */}
+                      <circle cx="80" cy="80" r="58" fill="none" stroke="#2563EB" strokeWidth="22" strokeDasharray="127.5 364.4" strokeDashoffset="-127.5" strokeLinecap="round" />
+                      {/* High (23%) */}
+                      <circle cx="80" cy="80" r="58" fill="none" stroke="#D97706" strokeWidth="22" strokeDasharray="83.8 364.4" strokeDashoffset="-255" strokeLinecap="round" />
+                      {/* Critical (8%) */}
+                      <circle cx="80" cy="80" r="58" fill="none" stroke="#DC2626" strokeWidth="22" strokeDasharray="29.1 364.4" strokeDashoffset="-338.8" strokeLinecap="round" />
+                    </svg>
+                    <div style={{ position: 'absolute', textAlign: 'center' }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{TOTAL_CASES}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', marginTop: 2 }}>Total Dossiers</div>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 170 }}>
+                    {[
+                      { label: 'Critical (SVI ≥ 75)', count: '04 (8%)', color: '#DC2626', bg: '#FEF2F2' },
+                      { label: 'High (SVI 50–74)', count: '12 (23%)', color: '#D97706', bg: '#FFFBEB' },
+                      { label: 'Moderate (25–49)', count: '18 (35%)', color: '#2563EB', bg: '#EFF6FF' },
+                      { label: 'Low (SVI < 25)', count: '18 (35%)', color: '#059669', bg: '#F0FDF4' },
+                    ].map((item) => (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '4px 8px', borderRadius: 4, background: item.bg }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#334155' }}>{item.label}</span>
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: item.color, fontFamily: 'monospace' }}>{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Case Stage Distribution Bar Chart */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A' }}>Case Status &amp; Tier Stage Distribution</div>
+                  <span style={{ fontSize: 10, fontWeight: 800, background: '#F0FDF4', color: '#166534', padding: '2px 8px', borderRadius: 4 }}>
+                    Live Telemetry
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 16 }}>
+                  Breakdown by statutory investigation stage across the 9 administrative tiers
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                  {[
+                    { label: 'Intake & AI Triage (L-0 Operator)', count: 14, pct: 27, color: '#0284C7' },
+                    { label: 'Ground Spot Inspection (L-0.5 IO)', count: 9, pct: 17, color: '#2563EB' },
+                    { label: 'District Field Inquiry (L-1 DSP/ACP)', count: 13, pct: 25, color: '#059669' },
+                    { label: 'SP Oversight & Seal (L-2 SP)', count: 5, pct: 10, color: '#D97706' },
+                    { label: 'Judiciary Scrutiny (L-4 Special Court)', count: 4, pct: 8, color: '#7C3AED' },
+                    { label: 'SWO Relief & Rehabilitation (L-5)', count: 6, pct: 12, color: '#047857' },
+                  ].map((stage) => (
+                    <div key={stage.label}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#334155' }}>{stage.label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 900, color: stage.color }}>{String(stage.count).padStart(2, '0')}</span>
+                          <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>({stage.pct}%)</span>
+                        </div>
+                      </div>
+                      <div style={{ background: '#F1F5F9', borderRadius: 4, height: 7, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${stage.pct}%`, background: stage.color, borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          ))}
+
+            {/* Row 2: Statutory Crime Typology & SLA Resolution Timeline */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 18 }}>
+              {/* Crime Typology */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A' }}>SC/ST PoA Act Statutory Crime Typology</div>
+                  <span style={{ fontSize: 10, fontWeight: 800, background: '#FFFBEB', color: '#92400E', padding: '2px 8px', borderRadius: 4 }}>
+                    Legal Sections
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 16 }}>
+                  Incident classification under SC/ST (Prevention of Atrocities) Act &amp; BNS
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[
+                    { label: 'Physical Assault & Grievous Hurt (Sec 3(2)(v))', count: 16, color: '#DC2626' },
+                    { label: 'Public Insult & Casteist Slurs (Sec 3(1)(r))', count: 22, color: '#D97706' },
+                    { label: 'Land Dispossession & Encroachment (Sec 3(1)(g))', count: 8, color: '#2563EB' },
+                    { label: 'Social Boycott & Denial of Public Water (Sec 3(1)(za))', count: 6, color: '#059669' },
+                  ].map((item) => {
+                    const pct = Math.round((item.count / TOTAL_CASES) * 100);
+                    return (
+                      <div key={item.label}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#334155' }}>{item.label}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 900, color: item.color }}>
+                            {String(item.count).padStart(2, '0')} ({pct}%)
+                          </span>
+                        </div>
+                        <div style={{ background: '#F1F5F9', borderRadius: 4, height: 7, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: item.color, borderRadius: 4 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SLA Compliance & Channel Ingestion Meter */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#0F172A' }}>SLA Compliance &amp; Channel Ingestion</div>
+                  <span style={{ fontSize: 10, fontWeight: 800, background: '#F0FDF4', color: '#166534', padding: '2px 8px', borderRadius: 4 }}>
+                    98.4% Overall
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 16 }}>
+                  Statutory deadlines under PoA Rules 1995 &amp; multi-channel distribution
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>IVRS 14566 HELPLINE</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginTop: 2 }}>62% <span style={{ fontSize: 10, color: '#059669', fontWeight: 800 }}>+4%</span></div>
+                    <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>32 Calls / 0ms delay</div>
+                  </div>
+
+                  <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>ONLINE CITIZEN PORTAL</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginTop: 2 }}>26% <span style={{ fontSize: 10, color: '#2563EB', fontWeight: 800 }}>Instant</span></div>
+                    <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>14 Web Forms filed</div>
+                  </div>
+
+                  <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>SPOT INSPECTION (7-DAY)</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: '#059669', marginTop: 2 }}>96.2%</div>
+                    <div style={{ fontSize: 10, color: '#059669', marginTop: 2 }}>Compliant under Rule 7</div>
+                  </div>
+
+                  <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>RELIEF DISBURSAL (DBT)</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: '#7C3AED', marginTop: 2 }}>₹34.5L</div>
+                    <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>Rule 12(4) Stage 1/2/3</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            VIEW 2: CENTRAL CASE REGISTER & DOSSIERS TABLE
+        ══════════════════════════════════════════════════════════════════════ */}
+        {currentView !== 'overview' && currentView !== 'officers' && (
+        <div style={{
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          borderRadius: 10,
+          overflow: 'hidden',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          marginBottom: 28,
+        }}>
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #E2E8F0',
+            background: '#F8FAFC',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <FileText size={17} color="rgb(0, 115, 230)" />
+              <div>
+                <h2 style={{ fontSize: 13, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                  Central Multi-Agency Case Register ({filteredCases.length})
+                </h2>
+                <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>
+                  {statFilter === 'all' && deskFilter === 'all' && 'Showing all registered atrocity complaints across Maharashtra & Central desks.'}
+                  {statFilter === 'active' && 'Filtered to Active complaints currently under field investigation.'}
+                  {statFilter === 'pending' && 'Filtered to Pending complaints awaiting inquiry or escalation.'}
+                  {statFilter === 'alerts' && 'Filtered to Critical alerts (SVI ≥ 75) requiring urgent response.'}
+                  {statFilter === 'resolved' && 'Filtered to Resolved & Disposed cases with recorded relief.'}
+                  {deskFilter !== 'all' && ` • Filtered to Desk: ${getRoleLabel(deskFilter)}`}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              {/* Desk Filter Dropdown */}
+              <select
+                value={deskFilter}
+                onChange={(e) => setDeskFilter(e.target.value)}
+                style={{
+                  padding: '7px 10px',
+                  borderRadius: 6,
+                  border: '1px solid #CBD5E1',
+                  background: '#FFFFFF',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#334155',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all">All Desks (9 Tiers)</option>
+                {ALL_DESKS.map((d) => (
+                  <option key={d.role} value={d.role}>{d.label} ({d.code})</option>
+                ))}
+              </select>
+
+              {/* Search Bar */}
+              <div style={{ position: 'relative' }}>
+                <Search size={13} color="#94A3B8" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  value={caseSearch}
+                  onChange={(e) => setCaseSearch(e.target.value)}
+                  placeholder="Search case, complainant, PS..."
+                  style={{
+                    padding: '7px 10px 7px 28px',
+                    borderRadius: 6,
+                    border: '1px solid #CBD5E1',
+                    background: '#FFFFFF',
+                    fontSize: 12,
+                    color: '#0F172A',
+                    outline: 'none',
+                    width: 220,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                  {['Case ID & Date', 'Complainant & District', 'Incident / Statutory Sections', 'Assigned Desk', 'Risk & SVI', 'Status', 'Action'].map((h) => (
+                    <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10.5, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCases.map((c) => {
+                  const svi = Number(c.svi_score || c.sviScore || 0);
+                  const isCritical = c.risk_tier === 'critical' || c.riskTier === 'critical' || svi >= 75;
+                  const isResolved = c.status === 'resolved' || c.status === 'closed';
+                  const isNew = c.status === 'new';
+                  const isInProgress = c.status === 'in_progress';
+                  const isEscalated = c.status === 'escalated';
+
+                  return (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #F1F5F9', background: isCritical ? '#FEF2F20A' : '#FFFFFF' }}>
+                      <td style={{ padding: '11px 14px' }}>
+                        <div style={{ fontWeight: 800, color: 'rgb(0, 115, 230)', fontFamily: 'monospace' }}>{c.id}</div>
+                        <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 2 }}>{new Date(c.created_at || c.createdAt || Date.now()).toLocaleDateString('en-IN')}</div>
+                      </td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{c.person_name || c.complainant_name || 'Complainant'}</div>
+                        <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>{c.incident_location || c.district || 'Pune District'}</div>
+                      </td>
+                      <td style={{ padding: '11px 14px', maxWidth: 280 }}>
+                        <div style={{ fontSize: 11.5, color: '#334155', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {c.incident_description || c.incidentType || 'SC/ST Protection Act complaint'}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: '#0284C7', fontWeight: 700, marginTop: 2 }}>
+                          {c.applicable_sections || 'SC/ST (PoA) Act Sec 3(1)(r)'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#334155', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '3px 8px', borderRadius: 4 }}>
+                          {c.assigned_io || (c.currentLevel === 1 ? 'DSP Operations' : c.currentLevel === 2 ? 'SP Oversight' : 'IO Investigation')}
+                        </span>
+                      </td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <RiskBadge tier={c.risk_tier || c.riskTier || 'low'} />
+                          <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 800, color: isCritical ? '#DC2626' : '#64748B' }}>
+                            SVI {svi}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <span style={{
+                          fontSize: 10.5,
+                          fontWeight: 800,
+                          padding: '3px 9px',
+                          borderRadius: 999,
+                          textTransform: 'uppercase',
+                          background: isResolved ? '#ECFDF5' : isCritical ? '#FEF2F2' : isInProgress ? '#EFF6FF' : isEscalated ? '#FFF7ED' : '#FFFBEB',
+                          color: isResolved ? '#065F46' : isCritical ? '#991B1B' : isInProgress ? '#1E40AF' : isEscalated ? '#9A3412' : '#92400E',
+                          border: `1px solid ${isResolved ? '#A7F3D0' : isCritical ? '#FECACA' : isInProgress ? '#BFDBFE' : isEscalated ? '#FFEDD5' : '#FDE68A'}`,
+                        }}>
+                          {isResolved ? 'Resolved' : isCritical ? 'Critical Alert' : isInProgress ? 'Under Inquiry' : isEscalated ? 'Escalated' : isNew ? 'New Complaint' : c.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCase(c)}
+                          style={{
+                            background: '#EFF6FF',
+                            color: 'rgb(0, 115, 230)',
+                            border: '1px solid #BFDBFE',
+                            borderRadius: 5,
+                            padding: '5px 10px',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <Eye size={12} /> Inspect
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!filteredCases.length && (
+                  <tr>
+                    <td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#64748B' }}>
+                      <FileText size={28} color="#CBD5E1" style={{ margin: '0 auto 8px', display: 'block' }} />
+                      <div style={{ fontWeight: 800, fontSize: 13, color: '#0F172A' }}>No registered complaints match this filter.</div>
+                      <div style={{ fontSize: 11.5, marginTop: 4 }}>Try clearing the search query or clicking "Total Cases" above.</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+        )}
 
         {/* JWT Security Panel */}
         <div style={{
@@ -931,102 +1475,114 @@ export default function SysAdminScreen({ embedded = false }) {
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <BarChart3 size={16} color="rgb(0, 115, 230)" />
-            All Operational Desks — Read-Only Monitoring
+            All Operational Desks — Live Monitoring &amp; Filter
           </h2>
           <p style={{ fontSize: 11, color: '#64748B', margin: '0 0 16px' }}>
-            Live desk health view. You are monitoring as SysAdmin — not logged in as any officer.
+            Click any desk card below to isolate that desk's cases in the register above.
           </p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14, marginBottom: 32 }}>
-          {ALL_DESKS.map((desk) => (
-            <div key={desk.role} style={{
-              background: '#FFFFFF',
-              border: `1px solid ${desk.alerts > 0 ? '#FECACA' : '#E2E8F0'}`,
-              borderTop: `3px solid ${desk.alerts > 0 ? '#EF4444' : desk.accent}`,
-              borderRadius: 10,
-              padding: '16px 18px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-            }}>
-              {/* Desk Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 900,
-                  background: desk.accent,
-                  color: '#FFF',
-                  padding: '2px 8px', borderRadius: 3,
+          {ALL_DESKS.map((desk) => {
+            const isDeskSelected = deskFilter === desk.role;
+            return (
+              <div
+                key={desk.role}
+                onClick={() => setDeskFilter((curr) => (curr === desk.role ? 'all' : desk.role))}
+                role="button"
+                tabIndex={0}
+                style={{
+                  background: isDeskSelected ? '#F0F9FF' : '#FFFFFF',
+                  border: isDeskSelected ? `2.5px solid ${desk.accent}` : `1px solid ${desk.alerts > 0 ? '#FECACA' : '#E2E8F0'}`,
+                  borderTop: `3px solid ${desk.alerts > 0 ? '#EF4444' : desk.accent}`,
+                  borderRadius: 10,
+                  padding: '16px 18px',
+                  boxShadow: isDeskSelected ? `0 4px 14px ${desk.accent}33` : '0 1px 4px rgba(0,0,0,0.04)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  cursor: 'pointer',
+                  transform: isDeskSelected ? 'scale(1.02)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {/* Desk Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 900,
+                    background: desk.accent,
+                    color: '#FFF',
+                    padding: '2px 8px', borderRadius: 3,
+                  }}>
+                    {desk.code}
+                  </span>
+                  {desk.alerts > 0 && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 800,
+                      background: '#FEF2F2', color: '#991B1B',
+                      border: '1px solid #FECACA',
+                      padding: '2px 8px', borderRadius: 3,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <AlertTriangle size={10} />
+                      {desk.alerts} ALERT{desk.alerts > 1 ? 'S' : ''}
+                    </span>
+                  )}
+                  {desk.alerts === 0 && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      background: '#F0FDF4', color: '#166534',
+                      border: '1px solid #BBF7D0',
+                      padding: '2px 8px', borderRadius: 3,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <CheckCircle2 size={10} />
+                      NOMINAL
+                    </span>
+                  )}
+                </div>
+
+                {/* Desk Info */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2 }}>{desk.label}</div>
+                  <div style={{ fontSize: 11, color: '#64748B' }}>{desk.desc}</div>
+                </div>
+
+                {/* Stats Row */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {[
+                    { label: 'Total', value: desk.cases, color: desk.accent },
+                    { label: 'Active', value: desk.active, color: '#059669' },
+                    { label: 'Pending', value: desk.pending, color: '#D97706' },
+                    { label: 'Resolved', value: desk.resolved, color: '#475569' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} style={{ flex: 1, textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+                      <div style={{ fontSize: 9.5, color: '#94A3B8', fontWeight: 600, marginTop: 2 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Filter indicator button */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '7px 10px',
+                  background: isDeskSelected ? desk.accent : '#F8FAFC',
+                  color: isDeskSelected ? '#FFFFFF' : '#475569',
+                  border: `1px solid ${isDeskSelected ? desk.accent : '#E2E8F0'}`,
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
                 }}>
-                  {desk.code}
-                </span>
-                {desk.alerts > 0 && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 800,
-                    background: '#FEF2F2', color: '#991B1B',
-                    border: '1px solid #FECACA',
-                    padding: '2px 8px', borderRadius: 3,
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
-                    <AlertTriangle size={10} />
-                    {desk.alerts} ALERT{desk.alerts > 1 ? 'S' : ''}
-                  </span>
-                )}
-                {desk.alerts === 0 && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    background: '#F0FDF4', color: '#166534',
-                    border: '1px solid #BBF7D0',
-                    padding: '2px 8px', borderRadius: 3,
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
-                    <CheckCircle2 size={10} />
-                    NOMINAL
-                  </span>
-                )}
+                  <Eye size={12} color={isDeskSelected ? '#FFFFFF' : '#475569'} />
+                  {isDeskSelected ? 'Active Desk Filter (Click to Reset)' : 'Click to View Cases'}
+                </div>
               </div>
-
-              {/* Desk Info */}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2 }}>{desk.label}</div>
-                <div style={{ fontSize: 11, color: '#64748B' }}>{desk.desc}</div>
-              </div>
-
-              {/* Stats Row */}
-              <div style={{ display: 'flex', gap: 12 }}>
-                {[
-                  { label: 'Total', value: desk.cases, color: desk.accent },
-                  { label: 'Active', value: desk.active, color: '#059669' },
-                  { label: 'Pending', value: desk.pending, color: '#D97706' },
-                  { label: 'Resolved', value: desk.resolved, color: '#475569' },
-                ].map(({ label, value, color }) => (
-                  <div key={label} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-                    <div style={{ fontSize: 9.5, color: '#94A3B8', fontWeight: 600, marginTop: 2 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Read-only indicator — no navigate button */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '7px 10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: 6,
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94A3B8',
-              }}>
-                <Eye size={12} color="#94A3B8" />
-                Monitoring View — No Login Access
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* System Audit Log */}
@@ -1279,6 +1835,70 @@ export default function SysAdminScreen({ embedded = false }) {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Case Detail Modal / Slide-out */}
+      {selectedCase && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(3px)',
+          zIndex: 10000,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: 12,
+            width: '100%',
+            maxWidth: 1080,
+            maxHeight: '92vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{
+              padding: '16px 24px',
+              background: '#0F1E36',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'rgb(0, 115, 230)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  CENTRAL SYSTEM ADMINISTRATOR &bull; CASE DOSSIER INSPECTOR
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 900, marginTop: 2 }}>
+                  Case #{selectedCase.id} &mdash; {selectedCase.person_name || selectedCase.complainant_name}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCase(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  borderRadius: 6,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                Close &times;
+              </button>
+            </div>
+            <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
+              <CaseDetailPanel caseItem={selectedCase} onClose={() => setSelectedCase(null)} />
             </div>
           </div>
         </div>

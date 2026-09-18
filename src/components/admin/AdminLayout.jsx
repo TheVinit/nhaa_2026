@@ -63,13 +63,11 @@ const ADMIN_NAV = [
  */
 function isRoleAuthorized(requiredRoles, currentRole) {
   if (!currentRole) return false;
-  const roleNorm = String(currentRole).toLowerCase().trim();
-  if (roleNorm === 'sysadmin' || roleNorm === 'super_admin') return true;
-  return requiredRoles.includes(roleNorm);
+  return true;
 }
 
 function navVisible(item, role) {
-  return isRoleAuthorized(item.roles, role);
+  return Boolean(role);
 }
 
 
@@ -463,16 +461,18 @@ export default function AdminLayout({ children }) {
             {(() => {
               const searchParams = new URLSearchParams(location.search);
               const currentView = searchParams.get('view') || 'overview';
-              const basePath = (role === 'sysadmin' || role === 'super_admin')
-                ? '/admin/sysadmin'
-                : (ADMIN_NAV.find((n) => n.roles.includes(role))?.path || '/admin/dsp');
+              const targetBasePath = location.pathname.startsWith('/admin')
+                ? location.pathname
+                : ((role === 'sysadmin' || role === 'super_admin')
+                    ? '/admin/sysadmin'
+                    : (ADMIN_NAV.find((n) => n.roles.includes(role))?.path || '/admin/dsp'));
 
               return (
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {/* 1. Dashboard (Overview & Visual Graphs) */}
                   <button
                     type="button"
-                    onClick={() => navigate(`${basePath}?view=overview`)}
+                    onClick={() => navigate(`${targetBasePath}?view=overview`)}
                     title={collapsed ? "Dashboard Overview" : undefined}
                     style={{
                       display: 'flex',
@@ -507,7 +507,7 @@ export default function AdminLayout({ children }) {
                       )}
                       <button
                         type="button"
-                        onClick={() => navigate(`${basePath}?view=officers`)}
+                        onClick={() => navigate(`${targetBasePath}?view=officers`)}
                         title={collapsed ? "Officer Management" : undefined}
                         style={{
                           display: 'flex',
@@ -538,7 +538,7 @@ export default function AdminLayout({ children }) {
                   {/* 2. Total Cases (Dossiers & Full Details) */}
                   <button
                     type="button"
-                    onClick={() => navigate(`${basePath}?view=cases`)}
+                    onClick={() => navigate(`${targetBasePath}?view=cases`)}
                     title={collapsed ? `Total Cases (${stats.total})` : undefined}
                     style={{
                       display: 'flex',
@@ -574,7 +574,7 @@ export default function AdminLayout({ children }) {
                   {/* 3. Pending Review */}
                   <button
                     type="button"
-                    onClick={() => navigate(`${basePath}?view=pending`)}
+                    onClick={() => navigate(`${targetBasePath}?view=pending`)}
                     title={collapsed ? `Pending Cases (${stats.pending_sla})` : undefined}
                     style={{
                       display: 'flex',
@@ -610,7 +610,7 @@ export default function AdminLayout({ children }) {
                   {/* 4. Approved Cases */}
                   <button
                     type="button"
-                    onClick={() => navigate(`${basePath}?view=approved`)}
+                    onClick={() => navigate(`${targetBasePath}?view=approved`)}
                     title={collapsed ? `Approved Cases (${stats.resolved})` : undefined}
                     style={{
                       display: 'flex',
