@@ -339,18 +339,6 @@ export default function AdminLayout({ children }) {
 
         {/* Right Officer Status & Role Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Station Desk Badge */}
-          <div style={{
-            fontSize: 11,
-            fontWeight: 800,
-            color: '#0369A1',
-            background: '#E0F2FE',
-            border: '1px solid #BAE6FD',
-            padding: '4px 10px',
-            borderRadius: 6,
-          }}>
-            Station Desk: {rank.code} {rank.label}
-          </div>
 
           <div style={{
             display: 'flex',
