@@ -339,44 +339,18 @@ export default function AdminLayout({ children }) {
 
         {/* Right Officer Status & Role Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Desk Switcher restricted strictly to sysadmin cross-tier oversight */}
-          {ADMIN_NAV.filter((item) => navVisible(item, role)).length > 1 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: '4px 10px', borderRadius: 6, border: '1px solid #CBD5E1' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>SysAdmin Cross-Desk Switcher:</span>
-              <select
-                value={location.pathname}
-                onChange={(e) => navigate(e.target.value)}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: 'rgb(0, 115, 230)',
-                  background: '#FFFFFF',
-                  border: '1px solid #94A3B8',
-                  borderRadius: 4,
-                  padding: '3px 6px',
-                  cursor: 'pointer',
-                }}
-              >
-                {ADMIN_NAV.filter((item) => navVisible(item, role)).map((n) => (
-                  <option key={n.path} value={n.path}>
-                    {n.code}: {n.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#0369A1',
-              background: '#E0F2FE',
-              border: '1px solid #BAE6FD',
-              padding: '4px 10px',
-              borderRadius: 6,
-            }}>
-              Station Desk: {rank.code} {rank.label}
-            </div>
-          )}
+          {/* Station Desk Badge */}
+          <div style={{
+            fontSize: 11,
+            fontWeight: 800,
+            color: '#0369A1',
+            background: '#E0F2FE',
+            border: '1px solid #BAE6FD',
+            padding: '4px 10px',
+            borderRadius: 6,
+          }}>
+            Station Desk: {rank.code} {rank.label}
+          </div>
 
           <div style={{
             display: 'flex',
